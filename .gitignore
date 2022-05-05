@@ -1,4 +1,8 @@
 /node_modules/
 /public/build/
+/bin
+/data_test
+/scripts/samples
+.vscode
 
 .DS_Store
