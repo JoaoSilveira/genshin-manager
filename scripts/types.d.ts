@@ -8,6 +8,6 @@ declare type ImageWithDescription = {
     image: string,
 };
 
-declare type ImageWithDescriptionAndValue = ImageWithDescription & {
-    quantity: number;
-};
+declare type AsyncReturnType<T extends (...args: any[]) => any> =
+    T extends (...args: any[]) => Promise<infer R> ? R
+    : T extends (...args: any[]) => infer R1 ? R1 : any;

@@ -142,12 +142,21 @@ export function findNextByTag(element: HTMLElement, tagName: string): HTMLElemen
 }
 
 export function getImageUrl(img: HTMLElement): string {
-    const url = img.attributes['src'];
-    if (url?.startsWith('https://')) {
-        return url;
+    let url = img.attributes['src'];
+    if (!url || !url.startsWith('https://')) {
+        url = img.attributes['data-src'];
     }
 
-    return img.attributes['data-src'];
+    if (!url) {
+        console.log(img);
+    }
+
+    const idx = ['.jpg', '.jpeg', '.png', '.svg']
+        .map(ext => url.indexOf(ext) + ext.length)
+        .filter(i => i >= 5)
+        .reduce((min, i) => i < min ? i : min, Number.MAX_SAFE_INTEGER);
+
+    return url.substring(0, expect(idx >= 0, idx, 'Image have unknown extension: ' + url));
 }
 
 export function linkFromPath(path: string): string {
@@ -169,9 +178,64 @@ export function assertArg(valid: boolean, param: string, message?: string): void
     }
 }
 
+export function expect<T>(valid: boolean | ((v: T) => boolean), value: T, message: string): T {
+    valid = typeof valid === 'boolean' ? valid : valid(value);
+
+    if (!valid) {
+        console.warn(message);
+    }
+
+    return value;
+}
+
 export function* enumerate<T>(it: Iterable<T>): IterableIterator<[T, number]> {
     let i = 0;
     for (const v of it) {
         yield [v, i++];
     }
+}
+
+export type Material = {
+    name: string,
+    image: string,
+    stars: number,
+};
+
+export function extractMaterial(container: HTMLElement): Material {
+    const url = traverseElement(container, 'vv');
+    const card = container.attributes['class']
+        .split(' ')
+        .find(cls => cls.startsWith('card_') && cls.length === 6);
+
+    return {
+        name: url.attributes['title'],
+        image: getImageUrl(firstHtmlChild(url)),
+        stars: parseInt(card.substring(5)),
+    };
+}
+
+export type MaterialWithQuantity = Material & {
+    quantity: number,
+};
+
+export function extractMaterialAndQuantity(container: HTMLElement, transform: (text: string) => string = undefined): MaterialWithQuantity {
+    const text = container.querySelector('.card_text').textContent;
+
+    return {
+        ...extractMaterial(container),
+        quantity: parseIntWithCommas(transform?.call(undefined, text) ?? text),
+    };
+}
+
+export function distinctBy<T, K>(it: Iterable<T>, getter: (obj: T) => K): T[] {
+    const map = new Map();
+
+    for (const item of it) {
+        const key = getter(item);
+
+        if (!map.has(key))
+            map.set(key, item);
+    }
+
+    return [...map.values()];
 }

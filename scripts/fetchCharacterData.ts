@@ -1,6 +1,6 @@
 import type { HTMLElement } from 'node-html-parser';
 import { extractAscensionData } from './extractAscensionData';
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, requireStringValue, traverseElement } from './util';
+import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, MaterialWithQuantity, requireStringValue, traverseElement } from './util';
 import { urls } from './compile_data';
 import { extractTalentData, TalentCostType } from './extractTalentData';
 
@@ -14,7 +14,7 @@ declare type PartialCharacter = {
 };
 
 declare type Character = PartialCharacter & {
-    ascensionCosts: ImageWithDescriptionAndValue[][],
+    ascensionCosts: MaterialWithQuantity[][],
     talentCosts: TalentCostType,
 };
 

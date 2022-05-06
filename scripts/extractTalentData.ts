@@ -1,11 +1,11 @@
 import type { HTMLElement } from 'node-html-parser';
-import { findNextByTag, firstHtmlChild, getImageUrl, htmlChildren, indexInParent, nthHtmlChild, parseIntWithCommas, traverseElement } from './util';
+import { extractMaterialAndQuantity, findNextByTag, firstHtmlChild, htmlChildren, indexInParent, MaterialWithQuantity, traverseElement } from './util';
 
 type TalentCostMap = {
-    [key: string]: ImageWithDescriptionAndValue[][] | { [otherKey: string]: ImageWithDescriptionAndValue[][] }
+    [key: string]: MaterialWithQuantity[][] | { [otherKey: string]: MaterialWithQuantity[][] }
 }
 
-export type TalentCostType = TalentCostMap | ImageWithDescriptionAndValue[][];
+export type TalentCostType = TalentCostMap | MaterialWithQuantity[][];
 
 export function extractTalentData(doc: HTMLElement): TalentCostType {
     const talents = doc.querySelectorAll('#Single_Talent_Leveling');
@@ -42,22 +42,18 @@ function extractByTopic(handle: HTMLElement): TalentCostMap {
     return data;
 }
 
-function extractSingle(talent: HTMLElement): ImageWithDescriptionAndValue[][] {
-    const data: ImageWithDescriptionAndValue[][] = [];
+function extractSingle(talent: HTMLElement): MaterialWithQuantity[][] {
+    const data: MaterialWithQuantity[][] = [];
 
     while (talent != null) {
-        const requisitesData: ImageWithDescriptionAndValue[] = [];
+        const requisitesData: MaterialWithQuantity[] = [];
         let requisites = firstHtmlChild(talent);
         while (firstHtmlChild(requisites)?.tagName !== 'DIV') {
             requisites = requisites.nextElementSibling;
         }
 
         while (firstHtmlChild(requisites) != null) {
-            requisitesData.push({
-                description: traverseElement(requisites, 'vvv').attributes['title'],
-                image: getImageUrl(traverseElement(requisites, 'vvvv')),
-                quantity: parseIntWithCommas(traverseElement(requisites, 'v$').textContent),
-            });
+            requisitesData.push(extractMaterialAndQuantity(firstHtmlChild(requisites)));
 
             requisites = requisites.nextElementSibling;
         }

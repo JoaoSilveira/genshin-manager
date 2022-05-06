@@ -1,5 +1,5 @@
 import { urls } from "./compile_data";
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, linkFromPath, traverseElement } from "./util";
+import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, linkFromPath, MaterialWithQuantity, traverseElement } from "./util";
 import type { HTMLElement } from 'node-html-parser';
 import { extractAscensionData } from "./extractAscensionData";
 
@@ -19,7 +19,7 @@ type PartialWeapon = {
 };
 
 export type Weapon = PartialWeapon & {
-    ascension: ImageWithDescriptionAndValue[][],
+    ascension: MaterialWithQuantity[][],
 };
 
 

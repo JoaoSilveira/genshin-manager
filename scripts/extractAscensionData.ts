@@ -1,21 +1,17 @@
 import type { HTMLElement } from 'node-html-parser';
-import { getImageUrl, parseIntWithCommas, traverseElement } from './util';
+import { extractMaterialAndQuantity, getImageUrl, MaterialWithQuantity, parseIntWithCommas, traverseElement } from './util';
 
-export function extractAscensionData(doc: HTMLElement): ImageWithDescriptionAndValue[][] {
+export function extractAscensionData(doc: HTMLElement): MaterialWithQuantity[][] {
     const header = doc.querySelector('#Ascensions_and_Stats') ?? doc.querySelector('#Ascensions');
     let ascension = traverseElement(header, '^>vv>>>');
-    const data: ImageWithDescriptionAndValue[][] = [];
+    const data: MaterialWithQuantity[][] = [];
 
     while (ascension != null) {
         let requisites = traverseElement(ascension, 'vv>v');
-        const requisitesData: ImageWithDescriptionAndValue[] = [];
+        const requisitesData: MaterialWithQuantity[] = [];
 
         while (requisites != null) {
-            requisitesData.push({
-                description: traverseElement(requisites, 'vv').attributes['title'],
-                image: getImageUrl(traverseElement(requisites, 'vvv')),
-                quantity: parseIntWithCommas(traverseElement(requisites, '$').textContent),
-            });
+            requisitesData.push(extractMaterialAndQuantity(requisites));
 
             requisites = requisites.nextElementSibling?.nextElementSibling;
         }

@@ -1,4 +1,4 @@
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, nthHtmlChild, parseIntWithCommas, traverseElement } from './util';
+import { extractMaterial, extractMaterialAndQuantity, fetchPage, firstHtmlChild, getImageUrl, htmlChildren, Material, MaterialWithQuantity, nthHtmlChild, parseIntWithCommas, traverseElement } from './util';
 import { urls } from './compile_data';
 import type { HTMLElement } from 'node-html-parser';
 
@@ -26,7 +26,7 @@ export async function fetchExperienceData(): Promise<ExperienceInfo> {
 
 type CharacterExperience = {
     expPerLevel: LevelExperience[],
-    expItems: ImageWithDescriptionAndValue[],
+    expItems: MaterialWithQuantity[],
 };
 
 async function fetchCharacterExperienceData(): Promise<CharacterExperience> {
@@ -58,31 +58,20 @@ function extractCharacterExpPerLevel(doc: HTMLElement): LevelExperience[] {
     return data;
 }
 
-function extractCharacterExpItems(doc: HTMLElement): ImageWithDescriptionAndValue[] {
+function extractCharacterExpItems(doc: HTMLElement): MaterialWithQuantity[] {
     const handle = traverseElement(doc.querySelector('#Leveling_Characters'), '^>>vv>v>');
 
+    // hardcoding quantity because I didn't find an easy way to get the values
     return [
-        {
-            description: "Wanderer's Advice",
-            image: getImageUrl(traverseElement(handle, 'v>>>>vvvv')),
-            quantity: 1000,
-        },
-        {
-            description: "Item Adventurer's Experience",
-            image: getImageUrl(traverseElement(handle, 'v>>vvvv')),
-            quantity: 5000,
-        },
-        {
-            description: "Hero's Wit",
-            image: getImageUrl(traverseElement(handle, 'vvvvv')),
-            quantity: 20000,
-        },
+        { ...extractMaterial(traverseElement(handle, 'vv')), quantity: 20000 },
+        { ...extractMaterial(traverseElement(handle, 'v>>v')), quantity: 5000 },
+        { ...extractMaterial(traverseElement(handle, '$<v')), quantity: 1000 },
     ];
 }
 
 type WeaponExperience = {
     expPerLevel: { [stars: string]: LevelExperience[] },
-    expItems: ImageWithDescriptionAndValue[],
+    expItems: MaterialWithQuantity[],
 };
 
 async function fetchWeaponExperienceData(): Promise<WeaponExperience> {
@@ -94,19 +83,12 @@ async function fetchWeaponExperienceData(): Promise<WeaponExperience> {
     };
 }
 
-function extractWeaponExpItems(doc: HTMLElement): ImageWithDescriptionAndValue[] {
+function extractWeaponExpItems(doc: HTMLElement): MaterialWithQuantity[] {
     let handle = traverseElement(doc.querySelector('#Weapon_Enhancement_Material'), '^>>');
-    const items: ImageWithDescriptionAndValue[] = [];
+    const items: MaterialWithQuantity[] = [];
 
     for (let i = 0; i < 3; i++) {
-        const link = traverseElement(handle, 'vvv');
-        const exp = traverseElement(handle, 'vv>v').textContent.trim();
-
-        items.push({
-            description: link.attributes['title'],
-            image: getImageUrl(firstHtmlChild(link)),
-            quantity: parseIntWithCommas(exp.substring(0, exp.length - 3)),
-        });
+        items.push(extractMaterialAndQuantity(firstHtmlChild(handle), txt => txt.substring(0, txt.length - 3)));
 
         handle = traverseElement(handle, '>>');
     }
