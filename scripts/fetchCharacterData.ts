@@ -1,6 +1,6 @@
 import type { HTMLElement } from 'node-html-parser';
 import { extractAscensionData } from './extractAscensionData';
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, MaterialWithQuantity, requireStringValue, traverseElement } from './util';
+import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, MaterialWithQuantity, requireStringValue, sanitizeName, traverseElement } from './util';
 import { urls } from './compile_data';
 import { extractTalentData, TalentCostType } from './extractTalentData';
 
@@ -34,7 +34,7 @@ function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
     return {
         url: linkFromPath(traverseElement(row, 'v>v').attributes['href']),
         data: {
-            name: traverseElement(row, 'v>v').textContent.trim(),
+            name: sanitizeName(traverseElement(row, 'v>v').textContent),
             image: getImageUrl(traverseElement(row, 'vvv')),
             stars: traverseElement(row, 'v>>v').attributes['title'],
             element: parseImageDescriptionColumn(traverseElement(row, '$<<vv')),

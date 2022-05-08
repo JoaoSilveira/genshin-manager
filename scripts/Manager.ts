@@ -89,28 +89,6 @@ type VisualItem = {
     image: string,
 };
 
-// type WeaponAscensionMaterials = {
-//     weapon_material: number,
-//     monster_material_1: number,
-//     monster_material_2: number,
-// };
-
-// type Weapon = {
-//     name: string,
-//     image: string,
-//     stars: number,
-//     baseAttack: number,
-//     subStatus: {
-//         index: number,
-//         type: string,
-//     },
-//     passive: {
-//         name: string,
-//         description: string,
-//     }
-//     ascension: WeaponAscensionMaterials,
-// };
-
 type TieredRequirement = {
     tier: keyof MaterialTier<unknown>,
     quantity: number,
@@ -167,6 +145,28 @@ type Character = {
     weapon: number,
     ascension: CharacterAscensionMaterials,
     talentAscension: TalentAscensionMaterials,
+};
+
+type Weapon = {
+    name: string,
+    image: string,
+    stars: number,
+    scaling: number,
+    ascension: WeaponAscensionMaterials,
+    subStatus: {
+        scaling: number,
+        attribute: string,
+    },
+    passive: {
+        name: string,
+        description: string,
+    },
+};
+
+type WeaponAscensionMaterials = {
+    weaponMaterial: TieredRequirement,
+    eliteMaterial: TieredRequirement,
+    commonMaterial: TieredRequirement,
 };
 
 class ItemManager {
@@ -426,10 +426,16 @@ export class Manager {
     readonly weaponAscension: WeaponAscensionRequirement[][];
     readonly talentAscension: TalentAscensionRequirement[];
     readonly characters: Character[];
+    readonly maxLevelByStars: number[] = [70, 70, 90, 90, 90];
+    readonly levelBarriers: number[] = [20, 40, 50, 60, 70, 80];
+    readonly weaponAttackScaling: number[][];
+    readonly weaponSubScaling: number[][];
+    readonly weapons: Weapon[];
+    readonly characterExpByLevel: number[];
+    readonly weaponExpByLevel: number[][];
 
     constructor(character: AsyncReturnType<typeof fetchCharacterData>, materials: AsyncReturnType<typeof fetchMaterials>, weapon: AsyncReturnType<typeof fetchWeaponData>, expMaterials: AsyncReturnType<typeof fetchExperienceData>) {
         this.items = new ItemManager(materials, expMaterials, character[0].ascensionCosts[0][0]);
-
         this.weaponTypes = distinctBy(character, c => c.weapon.description).map(c => c.weapon);
         this.elements = distinctBy(character, c => c.element?.description).map(c => c.element).filter(e => e != null);
         this.characterAscension = character[0].ascensionCosts.map((row): CharacterAscensionRequirement => ({
@@ -494,6 +500,29 @@ export class Manager {
             },
             talentAscension: this.resolveTalentAscension(c.talentCosts),
         }));
+        this.weaponAttackScaling = Object.keys(weapon[1])
+            .map(stars => parseInt(stars.substring(0, 1)))
+            .map(s => weapon[1][s])
+        this.characterExpByLevel = expMaterials.character.expPerLevel.map(epl => epl.toNext).filter(e => e != null);
+        this.weaponExpByLevel = Object.keys(expMaterials.weapon.expPerLevel)
+            .map(stars => parseInt(stars.substring(0, 1)))
+            .map(s => expMaterials.weapon.expPerLevel[s].map(epl => epl.toNext).filter(e => e != null));
+        // this.weapons = weapon[0].map(w => ({
+        //     name: w.name,
+        //     image: w.image,
+        //     passive: w.passive,
+        //     stars: parseInt(w.stars.substring(0, 1)),
+        //     subStatus: {
+        //         attribute: w.sub,
+        //         // scaling: //todo,
+        //     },
+        //     // scaling: //todo,
+        //     ascension: {
+        //         weaponMaterial: this.items.getGroupIdByName(w.ascension[0][1].name),
+        //         eliteMaterial: this.items.getGroupIdByName(w.ascension[0][2].name),
+        //         commonMaterial: this.items.getGroupIdByName(w.ascension[0][3].name),
+        //     },
+        // }));
     }
 
     resolveTalentAscension(talentCosts: TalentCostType): TalentAscensionMaterials {
@@ -530,7 +559,7 @@ export class Manager {
                             };
 
                             return acc;
-                        });
+                        }, {});
                 }
 
                 return cost;

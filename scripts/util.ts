@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 import type { HTMLElement } from 'node-html-parser';
 import { readFile } from 'fs/promises';
 
-export const IsProduction = false;
+export const IsProduction = true;
 
 function isSuccess(request: AxiosResponse<any, any>): boolean {
     return Math.floor(request.status / 100) == 2;
@@ -238,4 +238,8 @@ export function distinctBy<T, K>(it: Iterable<T>, getter: (obj: T) => K): T[] {
     }
 
     return [...map.values()];
+}
+
+export function sanitizeName(input: string): string {
+    return input.split(/\s|\n/).map(w => w.trim()).filter(w => w.length > 0).join(' ');
 }

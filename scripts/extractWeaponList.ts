@@ -22,7 +22,6 @@ export type Weapon = PartialWeapon & {
     ascension: MaterialWithQuantity[][],
 };
 
-
 export async function extractWeaponList(): Promise<Weapon[]> {
     const doc = await fetchPage(urls.weapon_list);
     const handle = traverseElement(doc.querySelector('#List_of_All_Weapons'), '^>>v');

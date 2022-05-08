@@ -2,10 +2,10 @@
 // import { fetchExperienceData } from "./fetchExperienceData";
 import { ArgumentError, assertArg, enumerate, IsProduction } from "./util";
 import { readFile, writeFile } from 'fs/promises';
-import type { fetchWeaponData } from "./fetchWeaponData";
-import type { fetchExperienceData } from "./fetchExperienceData";
-import type { fetchCharacterData } from "./fetchCharacterData";
-import type { fetchMaterials } from "./fetchMaterials";
+import { fetchWeaponData } from "./fetchWeaponData";
+import { fetchExperienceData } from "./fetchExperienceData";
+import { fetchCharacterData } from "./fetchCharacterData";
+import { fetchMaterials } from "./fetchMaterials";
 import { Manager } from "./Manager";
 
 const prod_urls = {
@@ -41,23 +41,23 @@ export const factors = {
     weapon_exp_to_mora: 10,
 };
 
-// async function run() {
-//     const [characters, experience, [weapons, baseInfo, subInfo], materials] = await Promise.all([
-//         fetchCharacterData(),
-//         fetchExperienceData(),
-//         fetchWeaponData(),
-//         fetchMaterials(),
-//     ]);
+async function build() {
+    const [characters, experience, [weapons, baseInfo, subInfo], materials] = await Promise.all([
+        fetchCharacterData(),
+        fetchExperienceData(),
+        fetchWeaponData(),
+        fetchMaterials(),
+    ]);
 
-//     await Promise.all([
-//         writeFile('data_test/characters.json', JSON.stringify(characters)),
-//         writeFile('data_test/experience.json', JSON.stringify(experience)),
-//         writeFile('data_test/weapons.json', JSON.stringify(weapons)),
-//         writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
-//         writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
-//         writeFile('data_test/materials.json', JSON.stringify(materials)),
-//     ]);
-// }
+    // await Promise.all([
+    //     writeFile('data_test/characters.json', JSON.stringify(characters)),
+    //     writeFile('data_test/experience.json', JSON.stringify(experience)),
+    //     writeFile('data_test/weapons.json', JSON.stringify(weapons)),
+    //     writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
+    //     writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
+    //     writeFile('data_test/materials.json', JSON.stringify(materials)),
+    // ]);
+}
 
 type FilesReturnType = [
     AsyncReturnType<typeof fetchCharacterData>,
@@ -68,7 +68,7 @@ type FilesReturnType = [
     AsyncReturnType<typeof fetchMaterials>,
 ];
 
-async function run() {
+async function transform() {
     const [characters, experience, weapons, baseInfo, subInfo, materials] = await Promise.all<FilesReturnType>([
         null ?? JSON.parse((await readFile('data_test/characters.json')).toString()),
         null ?? JSON.parse((await readFile('data_test/experience.json')).toString()),
@@ -83,4 +83,4 @@ async function run() {
     console.log(manager);
 }
 
-run();
+transform();

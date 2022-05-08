@@ -1,6 +1,6 @@
 import { urls } from "./compile_data";
 import type { HTMLElement } from 'node-html-parser';
-import { extractMaterial, fetchPage, firstHtmlChild, getImageUrl, getTextWithBr, htmlChildren, lastHtmlChild, Material, traverseElement } from "./util";
+import { extractMaterial, fetchPage, firstHtmlChild, getImageUrl, getTextWithBr, htmlChildren, lastHtmlChild, Material, sanitizeName, traverseElement } from "./util";
 
 type LocalSpecialty = Material & {
     region: string,
@@ -79,8 +79,8 @@ function extractCommonEnemyGroup(doc: HTMLElement): MaterialGroup[] {
     const data: MaterialGroup[] = [];
 
     while (handle) {
-        const groupName = sanitizeTextContent(firstHtmlChild(handle));
-        const enemies = [...htmlChildren(traverseElement(handle, '$v'))].map(el => safeName(el));
+        const groupName = sanitizeName(firstHtmlChild(handle).textContent);
+        const enemies = [...htmlChildren(traverseElement(handle, '$v'))].map(el => sanitizeName(el.textContent));
         const materials: Material[] = [];
 
         let matHandle = traverseElement(handle, 'v>v');
@@ -107,8 +107,8 @@ function extractEliteEnemyGroup(doc: HTMLElement): MaterialGroup[] {
     return [...htmlChildren(traverseElement(target, '^>>v'))]
         .slice(1)
         .map((handle): MaterialGroup => {
-            const groupName = sanitizeTextContent(firstHtmlChild(handle));
-            const enemies = [...htmlChildren(traverseElement(handle, '$v'))].map(el => safeName(el));
+            const groupName = sanitizeName(firstHtmlChild(handle).textContent);
+            const enemies = [...htmlChildren(traverseElement(handle, '$v'))].map(el => sanitizeName(el.textContent));
             const materials: Material[] = [];
 
             let matHandle = traverseElement(handle, 'v>v');
@@ -124,17 +124,6 @@ function extractEliteEnemyGroup(doc: HTMLElement): MaterialGroup[] {
                 enemies,
             };
         });
-}
-
-function sanitizeTextContent(element: HTMLElement): string {
-    return getTextWithBr(element)
-        .replaceAll('\n', ' ')
-        .replaceAll('\r', '')
-        .trim();
-}
-
-function safeName(element: HTMLElement): string {
-    return element.textContent.split('\n').map(w => w.trim()).filter(s => s.length > 0).join(' ');
 }
 
 type CharacterAscensionMaterials = {
@@ -158,7 +147,7 @@ function extractGems(doc: HTMLElement): GemGroup[] {
     return [...htmlChildren(traverseElement(target, '^>>>v'))]
         .slice(1)
         .map((handle): GemGroup => {
-            const groupName = safeName(firstHtmlChild(handle));
+            const groupName = sanitizeName(firstHtmlChild(handle).textContent);
             const img = traverseElement(handle, 'v>vvv');
             const materials: Material[] = [];
 
@@ -193,7 +182,7 @@ function extractLocalSpecialty(doc: HTMLElement): LocalSpecialty[] {
         .slice(1)
         .map((handle): LocalSpecialty => ({
             ...extractMaterial(traverseElement(handle, 'v>vv')),
-            region: safeName(firstHtmlChild(handle)),
+            region: sanitizeName(firstHtmlChild(handle).textContent),
         }));
 }
 
@@ -251,7 +240,7 @@ function extractTalentBossMaterial(doc: HTMLElement): WeeklyBossMaterial[] {
 
     while (handle != null) {
         const span = parseInt(firstHtmlChild(handle).attributes['rowspan'] ?? '1');
-        const bossName = safeName(traverseElement(handle, 'vvv$v'));
+        const bossName = sanitizeName(traverseElement(handle, 'vvv$v').textContent);
         const bossImage = getImageUrl(traverseElement(handle, 'vvvvvv'));
 
         const materials: Material[] = [];
