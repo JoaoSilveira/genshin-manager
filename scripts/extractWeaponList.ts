@@ -20,6 +20,8 @@ type PartialWeapon = {
 
 export type Weapon = PartialWeapon & {
     ascension: MaterialWithQuantity[][],
+    attackScaling: number[],
+    subScaling: number[],
 };
 
 export async function extractWeaponList(): Promise<Weapon[]> {
@@ -58,11 +60,38 @@ function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
 
 async function extendWeapon(partial: RowToExtend<PartialWeapon>): Promise<Weapon> {
     const doc = await fetchPage(IsProduction ? partial.url : "scripts/samples/weapon-sample.html");
+    const [attackScaling, subScaling] = extractAttackScaling(doc);
 
     return {
         ...partial.data,
         ascension: extractAscensionData(doc),
+        attackScaling,
+        subScaling,
     };
+}
+
+function extractAttackScaling(doc: HTMLElement): [number[], number[]] {
+    const header = doc.querySelector('#Ascensions_and_Stats') ?? doc.querySelector('#Ascensions');
+    let row = traverseElement(header, '^>vv>');
+    const hasSub = [...htmlChildren(row)].length === 4;
+
+    const attack = new Set<number>();
+    const sub = new Set<number>();
+    while (row != null) {
+        if (hasSub) {
+            attack.add(parseFloat(traverseElement(row, '$<').textContent));
+            attack.add(parseFloat(traverseElement(row, '>$<').textContent));
+            sub.add(parseFloat(traverseElement(row, '$').textContent));
+            sub.add(parseFloat(traverseElement(row, '>$').textContent));
+        } else {
+            attack.add(parseFloat(traverseElement(row, '$').textContent));
+            attack.add(parseFloat(traverseElement(row, '>$').textContent));
+        }
+
+        row = traverseElement(row, '>>>');
+    }
+
+    return [[...attack.values()], hasSub ? [...sub.values()] : undefined];
 }
 
 function parseStatusValue(text: string): { base: number, final: number, subStatus?: string } {

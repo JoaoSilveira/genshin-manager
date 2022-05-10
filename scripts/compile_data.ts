@@ -6,7 +6,7 @@ import { fetchWeaponData } from "./fetchWeaponData";
 import { fetchExperienceData } from "./fetchExperienceData";
 import { fetchCharacterData } from "./fetchCharacterData";
 import { fetchMaterials } from "./fetchMaterials";
-import { Manager } from "./Manager";
+import { Manager, WeaponBaseManager } from "./Manager";
 
 const prod_urls = {
     character_exp: 'https://genshin-impact.fandom.com/wiki/Character_EXP',
@@ -43,20 +43,20 @@ export const factors = {
 
 async function build() {
     const [characters, experience, [weapons, baseInfo, subInfo], materials] = await Promise.all([
-        fetchCharacterData(),
-        fetchExperienceData(),
+        true ?? fetchCharacterData(),
+        true ?? fetchExperienceData(),
         fetchWeaponData(),
-        fetchMaterials(),
+        true ?? fetchMaterials(),
     ]);
 
-    // await Promise.all([
-    //     writeFile('data_test/characters.json', JSON.stringify(characters)),
-    //     writeFile('data_test/experience.json', JSON.stringify(experience)),
-    //     writeFile('data_test/weapons.json', JSON.stringify(weapons)),
-    //     writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
-    //     writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
-    //     writeFile('data_test/materials.json', JSON.stringify(materials)),
-    // ]);
+    await Promise.all([
+        // writeFile('data_test/characters.json', JSON.stringify(characters)),
+        // writeFile('data_test/experience.json', JSON.stringify(experience)),
+        // writeFile('data_test/weapons.json', JSON.stringify(weapons)),
+        // writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
+        // writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
+        // writeFile('data_test/materials.json', JSON.stringify(materials)),
+    ]);
 }
 
 type FilesReturnType = [
@@ -78,9 +78,31 @@ async function transform() {
         null ?? JSON.parse((await readFile('data_test/materials.json')).toString()),
     ]);
 
+    // const subs = weapons
+    //     .filter(w => w.sub !== 'Elemental Mastery')
+    //     .filter(w => w.subScaling != null)
+    //     .reduce((un: number[][], w) => {
+    //         const l = w.subScaling;
+    //         const contains = un.some(sub => l.every((v, i) => v === sub[i]));
+    //         if (!contains) {
+    //             un.push(l);
+    //         }
+
+    //         return un;
+    //     }, [])
+    //     .sort((a, b) => {
+    //         for (let i = 0; i < a.length; i++) {
+    //             if (a[i] !== b[i]) {
+    //                 return a[i] - b[i]
+    //             }
+    //         }
+    //         return 0;
+    //     });
+    // console.log(JSON.stringify(subs));
+
     const manager = new Manager(characters, materials, [weapons, baseInfo, subInfo], experience);
-    
-    console.log(manager);
+
+    await writeFile('data_test/genshin_data.json', JSON.stringify(manager.serialize()));
 }
 
 transform();

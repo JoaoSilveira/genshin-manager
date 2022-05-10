@@ -1,9 +1,10 @@
-import type { TalentCostType } from "./extractTalentData";
+import type { TalentCostType as TalentCostTypeOutput } from "./extractTalentData";
 import type { fetchCharacterData } from "./fetchCharacterData";
 import type { fetchExperienceData } from "./fetchExperienceData";
 import type { fetchMaterials } from "./fetchMaterials";
 import type { fetchWeaponData } from "./fetchWeaponData";
-import { distinctBy, expect } from "./util";
+import type { Weapon as WeaponOutput } from './extractWeaponList';
+import { distinctBy, expect, sum } from "./util";
 
 type Identifiable = {
     id: number,
@@ -164,9 +165,9 @@ type Weapon = {
 };
 
 type WeaponAscensionMaterials = {
-    weaponMaterial: TieredRequirement,
-    eliteMaterial: TieredRequirement,
-    commonMaterial: TieredRequirement,
+    weaponMaterial: number,
+    eliteMaterial: number,
+    commonMaterial: number,
 };
 
 class ItemManager {
@@ -225,6 +226,32 @@ class ItemManager {
         if (!ItemManager.isGroupBased(group)) return;
 
         return group.id;
+    }
+
+    serialize(): any {
+        return [...this.idToMaterial.values()]
+            .map(it => {
+                if (ItemManager.isSimpleMaterialBased(it)) return it;
+
+                if (ItemManager.isGroupBased(it)) {
+                    return {
+                        ...it,
+                        tiers: {
+                            low: it.tiers.low.id,
+                            medium: it.tiers.medium.id,
+                            high: it.tiers.high.id,
+                            highest: it.tiers.highest?.id,
+                        },
+                    };
+                }
+
+                if (ItemManager.isWeeklyBossGroup(it)) {
+                    return {
+                        ...it,
+                        materials: it.materials.map(m => m.id),
+                    };
+                }
+            });
     }
 
     private addExperienceItems(expMaterials: AsyncReturnType<typeof fetchExperienceData>): void {
@@ -418,6 +445,67 @@ class ItemManager {
     }
 }
 
+export class WeaponBaseManager {
+    private attackBefore: number[][] = new Array();
+    private attackAfter: number[][] = new Array();
+    private starOffset: number[] = new Array(5);
+    private sub: number[][];
+    private subAbsOffset: number;
+
+    constructor(attack: AsyncReturnType<typeof fetchWeaponData>[1], sub: AsyncReturnType<typeof fetchWeaponData>[2]) {
+        this.subAbsOffset = sub.percentual.values.length;
+        this.sub = sub.percentual.values.concat(sub.absolute.values);
+
+        let offset = 0;
+        for (let i = 0; i < 5; i++) {
+            this.starOffset[i] = offset;
+
+            attack[`${i + 1} Stars`].forEach(line => {
+                this.attackBefore.push(line.beforeAscension);
+                this.attackAfter.push(line.afterAscension.filter(v => v != null));
+            });
+
+            offset = this.attackBefore.length;
+        }
+    }
+
+    attackScalingIndex(weapon: WeaponOutput): number {
+        const i = parseInt(weapon.stars.substring(0, 1));
+
+        const index = this.attackBefore
+            .slice(
+                this.starOffset[i - 1],
+                i >= this.starOffset.length ? undefined : this.starOffset[i],
+            )
+            .findIndex(v => v[0] === weapon.baseAttack);
+
+        return index >= 0 ? index : undefined;
+    }
+
+    subScalingIndex(weapon: WeaponOutput): number {
+        const isAbsolute = weapon.sub === 'Elemental Mastery';
+
+        const index = this.sub
+            .slice(
+                isAbsolute ? this.subAbsOffset : 0,
+                isAbsolute ? undefined : this.subAbsOffset,
+            )
+            .findIndex(v => v[0] === weapon.baseSub && v[v.length - 1] === weapon.finalSub);
+
+        return index;
+    }
+
+    serialize(): any {
+        return {
+            attackBefore: this.attackBefore,
+            attackAfter: this.attackAfter,
+            starOffset: this.starOffset,
+            sub: this.sub,
+            subAbsOffset: this.subAbsOffset,
+        };
+    }
+}
+
 export class Manager {
     readonly items: ItemManager;
     readonly elements: VisualItem[];
@@ -428,11 +516,10 @@ export class Manager {
     readonly characters: Character[];
     readonly maxLevelByStars: number[] = [70, 70, 90, 90, 90];
     readonly levelBarriers: number[] = [20, 40, 50, 60, 70, 80];
-    readonly weaponAttackScaling: number[][];
-    readonly weaponSubScaling: number[][];
-    readonly weapons: Weapon[];
+    readonly weaponStatus: WeaponBaseManager;
     readonly characterExpByLevel: number[];
     readonly weaponExpByLevel: number[][];
+    readonly weapons: Weapon[];
 
     constructor(character: AsyncReturnType<typeof fetchCharacterData>, materials: AsyncReturnType<typeof fetchMaterials>, weapon: AsyncReturnType<typeof fetchWeaponData>, expMaterials: AsyncReturnType<typeof fetchExperienceData>) {
         this.items = new ItemManager(materials, expMaterials, character[0].ascensionCosts[0][0]);
@@ -500,32 +587,41 @@ export class Manager {
             },
             talentAscension: this.resolveTalentAscension(c.talentCosts),
         }));
-        this.weaponAttackScaling = Object.keys(weapon[1])
-            .map(stars => parseInt(stars.substring(0, 1)))
-            .map(s => weapon[1][s])
         this.characterExpByLevel = expMaterials.character.expPerLevel.map(epl => epl.toNext).filter(e => e != null);
-        this.weaponExpByLevel = Object.keys(expMaterials.weapon.expPerLevel)
-            .map(stars => parseInt(stars.substring(0, 1)))
-            .map(s => expMaterials.weapon.expPerLevel[s].map(epl => epl.toNext).filter(e => e != null));
-        // this.weapons = weapon[0].map(w => ({
-        //     name: w.name,
-        //     image: w.image,
-        //     passive: w.passive,
-        //     stars: parseInt(w.stars.substring(0, 1)),
-        //     subStatus: {
-        //         attribute: w.sub,
-        //         // scaling: //todo,
-        //     },
-        //     // scaling: //todo,
-        //     ascension: {
-        //         weaponMaterial: this.items.getGroupIdByName(w.ascension[0][1].name),
-        //         eliteMaterial: this.items.getGroupIdByName(w.ascension[0][2].name),
-        //         commonMaterial: this.items.getGroupIdByName(w.ascension[0][3].name),
-        //     },
-        // }));
+        this.weaponExpByLevel = this.weaponExpSortedByStar(expMaterials.weapon.expPerLevel);
+        this.weaponStatus = new WeaponBaseManager(weapon[1], weapon[2]);
+        this.weapons = weapon[0].map((w): Weapon => ({
+            name: w.name,
+            image: w.image,
+            passive: w.passive,
+            stars: parseInt(w.stars.substring(0, 1)),
+            subStatus: {
+                attribute: w.sub,
+                scaling: this.weaponStatus.subScalingIndex(w),
+            },
+            scaling: this.weaponStatus.attackScalingIndex(w),
+            ascension: {
+                weaponMaterial: this.items.getGroupIdByName(w.ascension[0][1].name),
+                eliteMaterial: this.items.getGroupIdByName(w.ascension[0][2].name),
+                commonMaterial: this.items.getGroupIdByName(w.ascension[0][3].name),
+            },
+        }));
     }
 
-    resolveTalentAscension(talentCosts: TalentCostType): TalentAscensionMaterials {
+    weaponExpSortedByStar(expPerLevel: any) {
+        const arr = new Array(5);
+
+        Object.keys(expPerLevel)
+            .forEach(s => {
+                const star = parseInt(s.substring(0, 1));
+
+                arr[star - 1] = expPerLevel[s].map(epl => epl.toNext).filter(e => e != null);
+            });
+
+        return arr;
+    }
+
+    resolveTalentAscension(talentCosts: TalentCostTypeOutput): TalentAscensionMaterials {
         if (Array.isArray(talentCosts)) {
             const last = talentCosts[talentCosts.length - 1];
 
@@ -564,5 +660,27 @@ export class Manager {
 
                 return cost;
             }, {}) as TravelerTalentAscensionMaterials;
+    }
+
+    serialize(): any {
+        return {
+            levelBarriers: this.levelBarriers,
+            items: this.items.serialize(),
+            elements: this.elements,
+            weapon: {
+                list: this.weapons,
+                ascension: this.weaponAscension,
+                types: this.weaponTypes,
+                levelCap: this.maxLevelByStars,
+                statuses: this.weaponStatus.serialize(),
+                exp: this.weaponExpByLevel,
+            },
+            character: {
+                list: this.characters,
+                ascension: this.characterAscension,
+                talent: this.talentAscension,
+                exp: this.characterExpByLevel,
+            },
+        };
     }
 }
