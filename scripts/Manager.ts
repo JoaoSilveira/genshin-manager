@@ -131,8 +131,15 @@ type CommonTalentAscensionMaterials = {
     bossMaterial: number,
 };
 
+type SingleTalentAscensionMaterials = {
+    monster: number,
+    book: number,
+    boss?: number,
+    crown?: number,
+};
+
 type TravelerTalentAscensionMaterials = {
-    [element: string]: CommonTalentAscensionMaterials[] | { [ability: string]: CommonTalentAscensionMaterials[] },
+    [element: string]: SingleTalentAscensionMaterials[] | { [ability: string]: SingleTalentAscensionMaterials[] },
 };
 
 type TalentAscensionMaterials = CommonTalentAscensionMaterials | TravelerTalentAscensionMaterials;
@@ -242,6 +249,7 @@ class ItemManager {
                             high: it.tiers.high.id,
                             highest: it.tiers.highest?.id,
                         },
+                        element: (it as AscensionGemGroup).element?.name,
                     };
                 }
 
@@ -595,10 +603,7 @@ export class Manager {
             image: w.image,
             passive: w.passive,
             stars: parseInt(w.stars.substring(0, 1)),
-            subStatus: {
-                attribute: w.sub,
-                scaling: this.weaponStatus.subScalingIndex(w),
-            },
+            subStatus: this.resolveWeaponSubStatus(w),
             scaling: this.weaponStatus.attackScalingIndex(w),
             ascension: {
                 weaponMaterial: this.items.getGroupIdByName(w.ascension[0][1].name),
@@ -606,6 +611,16 @@ export class Manager {
                 commonMaterial: this.items.getGroupIdByName(w.ascension[0][3].name),
             },
         }));
+    }
+
+    resolveWeaponSubStatus(w: any): Weapon['subStatus'] {
+        const scaling = this.weaponStatus.subScalingIndex(w);
+        if (scaling < 0) return undefined;
+
+        return {
+            attribute: w.sub,
+            scaling,
+        };
     }
 
     weaponExpSortedByStar(expPerLevel: any) {
@@ -633,33 +648,44 @@ export class Manager {
         }
 
         return Object.keys(talentCosts)
-            .reduce((cost, element) => {
-                if (Array.isArray(talentCosts[element])) {
-                    const last = talentCosts[element][(talentCosts[element] as any[]).length - 1];
+            .reduce((cost, element): TravelerTalentAscensionMaterials => {
+                const elementCost = talentCosts[element];
+                if (Array.isArray(elementCost)) {
+                    const requirements: SingleTalentAscensionMaterials[] = [];
 
-                    cost[element] = {
-                        monsterGroup: this.items.getGroupIdByName(last[1].name),
-                        bookSeries: this.items.getGroupIdByName(last[2].name),
-                        bossMaterial: this.items.idOf(last[3].name),
-                    };
+                    for (const line of elementCost) {
+                        requirements.push({
+                            monster: this.items.idOf(line[1].name),
+                            book: this.items.idOf(line[2].name),
+                            boss: line.length > 3 ? this.items.idOf(line[3].name) : undefined,
+                            crown: line.length > 4 ? line[4].quantity : undefined,
+                        });
+                    }
+
+                    cost[element] = requirements;
                 } else {
                     cost[element] = Object.keys(talentCosts[element])
                         .reduce((acc, hab) => {
                             const costs = talentCosts[element][hab];
-                            const last = costs[costs.length - 1];
+                            const requirements: SingleTalentAscensionMaterials[] = [];
 
-                            acc[hab] = {
-                                monsterGroup: this.items.getGroupIdByName(last[1].name),
-                                bookSeries: this.items.getGroupIdByName(last[2].name),
-                                bossMaterial: this.items.idOf(last[3].name),
-                            };
+                            for (const line of costs) {
+                                requirements.push({
+                                    monster: this.items.idOf(line[1].name),
+                                    book: this.items.idOf(line[2].name),
+                                    boss: line.length > 3 ? this.items.idOf(line[3].name) : undefined,
+                                    crown: line.length > 4 ? line[4].quantity : undefined,
+                                });
+                            }
+
+                            acc[hab] = requirements;
 
                             return acc;
                         }, {});
                 }
 
                 return cost;
-            }, {}) as TravelerTalentAscensionMaterials;
+            }, {} as Partial<TravelerTalentAscensionMaterials>);
     }
 
     serialize(): any {

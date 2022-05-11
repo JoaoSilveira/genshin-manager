@@ -34,7 +34,7 @@ function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
     return {
         url: linkFromPath(traverseElement(row, 'v>v').attributes['href']),
         data: {
-            name: sanitizeName(traverseElement(row, 'v>v').textContent),
+            name: sanitizeName(traverseElement(row, 'v>v')),
             image: getImageUrl(traverseElement(row, 'vvv')),
             stars: traverseElement(row, 'v>>v').attributes['title'],
             element: parseImageDescriptionColumn(traverseElement(row, '$<<vv')),

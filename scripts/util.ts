@@ -240,8 +240,11 @@ export function distinctBy<T, K>(it: Iterable<T>, getter: (obj: T) => K): T[] {
     return [...map.values()];
 }
 
-export function sanitizeName(input: string): string {
-    return input.split(/\s|\n/).map(w => w.trim()).filter(w => w.length > 0).join(' ');
+export function sanitizeName(input: HTMLElement): string {
+    const text = input.childNodes
+        .map(e => (e as HTMLElement).tagName === 'BR' ? '\n' : e.textContent)
+        .join('');
+    return text.split(/\s|\n/).map(w => w.trim()).filter(w => w.length > 0).join(' ');
 }
 
 export function sum(values: number[]): number {
