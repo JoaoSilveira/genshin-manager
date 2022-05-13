@@ -12,16 +12,9 @@ const enum MaterialType {
     WeeklyBoss = 7,
 }
 
-type MaterialTypeMap = {
-    [MaterialType.Simple]: Material,
-    [MaterialType.Experience]: ExperienceMaterial,
-    [MaterialType.LocalSpecialty]: LocalSpecialty,
-    [MaterialType.MonsterDrop]: MonsterDropGroup,
-    [MaterialType.AscensionGem]: AscensionGemGroup,
-    [MaterialType.Ascention]: AscentionMaterialGroup,
-    [MaterialType.ExperienceGroup]: ExperienceMaterialGroup,
-    [MaterialType.WeeklyBoss]: WeeklyBossMaterialGroup,
-};
+export function indexOf(id: number): number {
+    return id >> TagShift;
+}
 
 export function isMaterial(id: Identifiable): id is Material {
     return (id.id & TagMask) === MaterialType.Simple;
@@ -39,26 +32,26 @@ export function isSimpleMaterial(id: Identifiable): id is Material {
     return (id.id & TagMask) <= MaterialType.LocalSpecialty;
 }
 
-export function isMonsterGroup(id: Identifiable): id is MonsterDropGroup {
+export function isMonsterGroup<TPayload>(id: Identifiable): id is MonsterDropGroup<TPayload> {
     return (id.id & TagMask) === MaterialType.MonsterDrop;
 }
 
-export function isGemGroup(id: Identifiable): id is AscensionGemGroup {
+export function isGemGroup<TPayload>(id: Identifiable): id is AscensionGemGroup<TPayload> {
     return (id.id & TagMask) === MaterialType.AscensionGem;
 }
 
-export function isAscensionGroup(id: Identifiable): id is AscentionMaterialGroup {
+export function isAscensionGroup<TPayload>(id: Identifiable): id is AscentionMaterialGroup<TPayload> {
     return (id.id & TagMask) === MaterialType.Ascention;
 }
 
-export function isExperienceGroup(id: Identifiable): id is ExperienceMaterialGroup {
+export function isExperienceGroup<TPayload>(id: Identifiable): id is ExperienceMaterialGroup<TPayload> {
     return (id.id & TagMask) === MaterialType.ExperienceGroup;
 }
 
-export function isGroup(id: Identifiable): id is BaseGroup {
-    return (id.id & TagMask) <= MaterialType.WeeklyBoss && !isSimpleMaterial(id);
+export function isGroup<TPayload, TMat = Material>(id: Identifiable): id is BaseGroup<TPayload, TMat> {
+    return (id.id & TagMask) < MaterialType.WeeklyBoss && !isSimpleMaterial(id);
 }
 
-export function isWeeklyBossGroup(id: Identifiable): id is WeeklyBossMaterialGroup {
-    return (id.id & TagMask) === MaterialType.LocalSpecialty;
+export function isWeeklyBossGroup<TPayload>(id: Identifiable): id is WeeklyBossMaterialGroup<TPayload> {
+    return (id.id & TagMask) === MaterialType.WeeklyBoss;
 }

@@ -1,42 +1,39 @@
 <script lang="ts">
-    import { getContext } from "svelte";
-    import { GenshinDataKey } from "../lib/consts";
-
-    export let character: Character;
-
-    const data = getContext<GenshinDataPristine>(GenshinDataKey);
-    const weapon = data.weapon.types[character.weapon];
-    const element =
-        character.element != null
-            ? data.elements[character.element]
-            : undefined;
+    export let character: Character<ExpandedPayload>;
+    export let selected: boolean;
 </script>
 
-<div>
+<div class:selected on:click>
     <img
         class="character"
         src={character.image}
         alt={character.name}
         title={character.name} />
 
-    {#if element}
+    {#if character.element}
         <img
             class="thumbnail element"
-            src={element.image}
-            alt={element.description}
-            title={element.description} />
+            src={character.element.image}
+            alt={character.element.description}
+            title={character.element.description} />
     {/if}
 
     <img
         class="thumbnail weapon"
-        src={weapon.image}
-        alt={weapon.description}
-        title={weapon.description} />
+        src={character.weapon.image}
+        alt={character.weapon.description}
+        title={character.weapon.description} />
 </div>
 
 <style lang="scss">
     div {
         position: relative;
+
+        border: 1px solid transparent;
+
+        &.selected {
+            border-color: black;
+        }
     }
 
     .character {

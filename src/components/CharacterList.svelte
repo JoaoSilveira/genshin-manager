@@ -1,15 +1,18 @@
 <script lang="ts">
-    import { getContext } from "svelte";
-    import { GenshinDataKey } from "../lib/consts";
+    import {
+        highlightedCharacter,
+        selectedCharacters,
+    } from "../stores/character";
+    import genshinData from "../stores/genshinData";
     import Character from "./Character.svelte";
-
-    const characters =
-        getContext<GenshinDataPristine>(GenshinDataKey).character.list;
 </script>
 
 <div>
-    {#each characters as character}
-        <Character {character} />
+    {#each $genshinData.character.list as character (character.name)}
+        <Character
+            {character}
+            selected={$selectedCharacters.has(character.name)}
+            on:click={() => ($highlightedCharacter = character)} />
     {/each}
 </div>
 

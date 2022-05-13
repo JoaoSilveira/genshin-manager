@@ -1,23 +1,17 @@
 <script lang="ts">
 	import BuildCost from "./components/BuildCost.svelte";
 	import CharacterList from "./components/CharacterList.svelte";
-	import Context from "./components/Context.svelte";
-	import { GenshinDataKey } from "./lib/consts";
-
-	const promise = fetch("./genshin_data.json").then(
-		(r) => r.json() as unknown as GenshinDataPristine
-	);
+	import { waitForValue } from "./lib/store";
+	import genshinData from "./stores/genshinData";
 </script>
 
 <main>
-	{#await promise}
+	{#await waitForValue(genshinData)}
 		<p>Loading content</p>
-	{:then data}
-		<Context {data} key={GenshinDataKey}>
-			<BuildCost />
-			<hr />
-			<CharacterList />
-		</Context>
+	{:then}
+		<BuildCost />
+		<hr />
+		<CharacterList />
 	{/await}
 </main>
 
