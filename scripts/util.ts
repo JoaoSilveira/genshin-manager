@@ -147,10 +147,6 @@ export function getImageUrl(img: HTMLElement): string {
         url = img.attributes['data-src'];
     }
 
-    if (!url) {
-        console.log(img);
-    }
-
     const idx = ['.jpg', '.jpeg', '.png', '.svg']
         .map(ext => url.indexOf(ext) + ext.length)
         .filter(i => i >= 5)

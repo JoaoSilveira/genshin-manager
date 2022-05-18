@@ -1,12 +1,17 @@
 import type { Readable } from "svelte/store";
 
 export function waitForValue<T>(store: Readable<T>): Promise<T> {
-    return new Promise((resolve) => {
-        const unsub = store.subscribe((v) => {
-            if (v === undefined) return;
+    let unsub: ReturnType<Readable<T>['subscribe']>;
 
-            unsub();
+    return new Promise((resolve) => {
+        unsub = store.subscribe((v) => {
+            if (v == null) return;
+
             resolve(v);
         });
-    });
+    })
+        .then((value: T) => {
+            unsub();
+            return value;
+        });
 }

@@ -70,9 +70,9 @@ function transformCharacters(pristine: GenshinDataPristine, items: Identifiable[
 function transformTalent(talent: TalentAscensionMaterials<PristinePayload>, items: Identifiable[]): TalentAscensionMaterials<ExpandedPayload> {
     if (isSimpleTalent(talent)) {
         return {
-            bookSeries: items[talent.bookSeries] as AscentionMaterialGroup<ExpandedPayload>,
-            monsterGroup: items[talent.monsterGroup] as MonsterDropGroup<ExpandedPayload>,
-            bossMaterial: items[talent.bossMaterial] as Material,
+            bookSeries: items[indexOf(talent.bookSeries)] as AscentionMaterialGroup<ExpandedPayload>,
+            monsterGroup: items[indexOf(talent.monsterGroup)] as MonsterDropGroup<ExpandedPayload>,
+            bossMaterial: items[indexOf(talent.bossMaterial)] as Material,
         }
     }
 
@@ -101,7 +101,7 @@ function transformTalent(talent: TalentAscensionMaterials<PristinePayload>, item
     }
 }
 
-function isSimpleTalent<TPayload>(talent: TalentAscensionMaterials<unknown>): talent is CommonTalentAscensionMaterials<TPayload> {
+export function isSimpleTalent<TPayload>(talent: TalentAscensionMaterials<unknown>): talent is CommonTalentAscensionMaterials<TPayload> {
     return 'monsterGroup' in talent;
 }
 

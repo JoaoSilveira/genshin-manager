@@ -10,3 +10,7 @@ export function arrayToObject<TIn, TOut>(arr: TIn[], func: (item: TIn, index: nu
         {},
     );
 }
+
+export function sum(arr: number[]): number {
+    return arr.reduce((acc, v) => acc + v, 0);
+}

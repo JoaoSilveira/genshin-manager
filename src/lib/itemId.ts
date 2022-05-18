@@ -13,7 +13,7 @@ const enum MaterialType {
 }
 
 export function indexOf(id: number): number {
-    return id >> TagShift;
+    return id >> 3;
 }
 
 export function isMaterial(id: Identifiable): id is Material {
