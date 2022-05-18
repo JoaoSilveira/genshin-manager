@@ -1,5 +1,5 @@
 import { parse, Node, NodeType } from 'node-html-parser';
-import axios, { AxiosResponse } from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import type { HTMLElement } from 'node-html-parser';
 import { readFile } from 'fs/promises';
 
