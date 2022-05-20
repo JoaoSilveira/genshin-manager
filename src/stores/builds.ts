@@ -5,6 +5,7 @@ import { waitForValue } from "../lib/store";
 import { arrayToObject, sum } from "../lib/util";
 import { highlightedCharacter, selectedCharacters } from "./character";
 import genshinData from "./genshinData";
+import localStorageStore from "./localStorageStore";
 
 const InitialBuild: Omit<CharacterBuild, 'name'> = {
     level: {
@@ -34,7 +35,7 @@ const InitialBuild: Omit<CharacterBuild, 'name'> = {
 }
 
 function buildStore() {
-    const store = writable<{ [name: string]: CharacterBuild }>(undefined, (set) => {
+    const store = localStorageStore<{ [name: string]: CharacterBuild }>('builds', undefined, (set) => {
         waitForValue(genshinData)
             .then(data => {
                 const builds = arrayToObject(

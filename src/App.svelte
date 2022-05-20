@@ -22,7 +22,7 @@
 	}
 
 	hr {
-		border-color: #333;
+		border-color: #ddd;
 		opacity: 0.25;
 	}
 </style>

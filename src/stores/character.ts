@@ -1,9 +1,13 @@
 import { writable, type Readable } from "svelte/store";
+import localStorageStore from "./localStorageStore";
 
 type ReadonlySet<T> = Omit<Set<T>, 'add' | 'clear' | 'delete'>;
 
 function buildSelectedCharactersStore() {
-    const store = writable<Set<string>>(new Set());
+    const store = localStorageStore<Set<string>>("selected-characters", new Set(), undefined, {
+        parse: (json: string) => new Set(JSON.parse(json)),
+        stringify: (value: Set<string>) => JSON.stringify([...value.values()]),
+    });
 
     return {
         select: function (name: string): void {
