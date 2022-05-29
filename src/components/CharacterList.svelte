@@ -12,7 +12,7 @@
     <BuildComposition />
 
     <div class="character-container">
-        {#each $genshinData.character.list as character (character.name)}
+        {#each genshinData.character.list as character (character.name)}
             <Character
                 {character}
                 selected={$selectedCharacters.has(character.name)}

@@ -1,18 +1,12 @@
 <script lang="ts">
 	import BuildCost from "./components/BuildCost.svelte";
 	import CharacterList from "./components/CharacterList.svelte";
-	import { waitForValue } from "./lib/store";
-	import genshinData from "./stores/genshinData";
 </script>
 
 <main>
-	{#await waitForValue(genshinData)}
-		<p>Loading content</p>
-	{:then}
-		<BuildCost />
-		<hr />
-		<CharacterList />
-	{/await}
+	<BuildCost />
+	<hr />
+	<CharacterList />
 </main>
 
 <style lang="scss">

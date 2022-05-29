@@ -188,3 +188,5 @@ declare type GenshinDataBase<TPayload> = {
 
 declare type GenshinDataPristine = GenshinDataBase<PristinePayload>;
 declare type GenshinDataExpanded = GenshinDataBase<ExpandedPayload>;
+
+declare type SvelteEvent<E extends Event = Event, T extends EventTarget = HTMLElement> = E & { currentTarget: EventTarget & T };

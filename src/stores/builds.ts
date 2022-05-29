@@ -1,7 +1,6 @@
 import { derived, writable } from "svelte/store"
 import { isSimpleTalent } from "../lib/genshinDataTransform";
 import { isGroup, isSimpleMaterial } from "../lib/itemId";
-import { waitForValue } from "../lib/store";
 import { arrayToObject, sum } from "../lib/util";
 import { highlightedCharacter, selectedCharacters } from "./character";
 import genshinData from "./genshinData";
@@ -14,42 +13,37 @@ const InitialBuild: Omit<CharacterBuild, 'name'> = {
             cap: 0,
         },
         end: {
-            level: 80,
+            level: 90,
             cap: 5,
         },
     },
     talents: {
         basic: {
             start: 1,
-            end: 6,
+            end: 9,
         },
         elemental: {
             start: 1,
-            end: 6,
+            end: 9,
         },
         burst: {
             start: 1,
-            end: 6,
+            end: 9,
         },
     }
-}
+};
+
+const initialBuilds = arrayToObject(
+    genshinData.character.list,
+    (c) => ([c.name, { ...InitialBuild, name: c.name }])
+);
 
 function buildStore() {
-    const store = localStorageStore<{ [name: string]: CharacterBuild }>('builds', undefined, (set) => {
-        waitForValue(genshinData)
-            .then(data => {
-                const builds = arrayToObject(
-                    data.character.list,
-                    (c) => ([c.name, { ...InitialBuild, name: c.name }])
-                );
-
-                set(builds);
-            });
-    });
+    const store = localStorageStore<{ [name: string]: CharacterBuild }>('builds', initialBuilds);
 
     return {
         updateBuild: function (build: CharacterBuild): void {
-            store.update(builds => void (builds[build.name] = { ...build }) || builds);
+            store.update(builds => void (builds[build.name] = build) || { ...builds });
         },
         subscribe: store.subscribe,
     }
@@ -57,133 +51,182 @@ function buildStore() {
 
 export const builds = buildStore();
 export const activeBuild = derived([builds, highlightedCharacter], ([$builds, $highlighted]) => $builds[$highlighted]);
-export const totalCost = derived([genshinData, builds, selectedCharacters], ([$genshinData, $builds, $selectedCharacters]) => {
-    if (!$genshinData || !$builds || !$selectedCharacters) return undefined;
+export const totalCost = derived([builds, selectedCharacters], ([$builds, $selectedCharacters]): TotalBuildCost => {
+    if (!genshinData || !$builds || !$selectedCharacters) return undefined;
 
-    return [...$selectedCharacters.values()]
+    const crown = genshinData.items.find(i => isSimpleMaterial(i) && i.name === 'Crown of Insight') as Material;
+    const costs = {
+        mora: 0,
+        exp: 0,
+        crown: { ...crown, quantity: 0 },
+        localSpecialtyMap: new Map<number, MaterialQuantity<LocalSpecialty>>(),
+        gemsMap: new Map<number, TieredMaterialCost>(),
+        booksMap: new Map<number, TieredMaterialCost>(),
+        mobMaterialsMap: new Map<number, TieredMaterialCost>(),
+        eliteMaterialsMap: new Map<number, TieredMaterialCost>(),
+        ascensionBossMaterialsMap: new Map<number, MaterialQuantity<Material>>(),
+        talentBossMaterialsMap: new Map<number, MaterialQuantity<Material>>(),
+    };
+
+    [...$selectedCharacters.values()]
         .map(sc => $builds[sc])
-        .reduce((cost, build) => {
-            const character = $genshinData.character.list.find(c => c.name === build.name);
-            const crown = $genshinData.items.find(i => isSimpleMaterial(i) && i.name === 'Crown of Insight') as Material;
+        .forEach(build => {
+            const character = genshinData.character.list.find(c => c.name === build.name);
 
-            const exp = sum($genshinData.character.exp.slice(build.level.start.level - 1, build.level.end.level - 1));
-            cost.exp += exp;
-            cost.mora += Math.ceil(exp / 5);
-            $genshinData.character
+            const exp = sum(genshinData.character.exp.slice(build.level.start.level - 1, build.level.end.level - 1));
+            costs.exp += exp;
+            costs.mora += Math.ceil(exp / 5);
+
+            genshinData.character
                 .ascension
-                .slice(build.level.start.cap, build.level.end.cap + 1)
+                .slice(build.level.start.cap, build.level.end.cap)
                 .forEach(asc => {
                     calculateAscensionCosts(
-                        cost,
+                        costs,
                         character.ascension,
                         asc,
                     );
                 });
-            $genshinData.character
+            genshinData.character
                 .talent
                 .slice(build.talents.basic.start - 1, build.talents.basic.end - 1)
                 .forEach((asc, i) => {
                     calculateTalentCosts(
-                        cost,
+                        costs,
                         character.talentAscension,
                         asc,
-                        crown,
                         build.talents.basic.start + i,
                         'normal attack',
                     );
                 });
-            $genshinData.character
+            genshinData.character
                 .talent
                 .slice(build.talents.elemental.start - 1, build.talents.elemental.end - 1)
                 .forEach((asc, i) => {
                     calculateTalentCosts(
-                        cost,
+                        costs,
                         character.talentAscension,
                         asc,
-                        crown,
                         build.talents.basic.start + i,
-                        'normal attack',
+                        'elemental skill',
                     );
                 });
-            $genshinData.character
+            genshinData.character
                 .talent
                 .slice(build.talents.burst.start - 1, build.talents.burst.end - 1)
                 .forEach((asc, i) => {
                     calculateTalentCosts(
-                        cost,
+                        costs,
                         character.talentAscension,
                         asc,
-                        crown,
                         build.talents.basic.start + i,
-                        'normal attack',
+                        'burst',
                     );
                 });
-
-            return cost;
-        }, {
-            exp: 0,
-            mora: 0,
-            materials: new Map<number, MaterialQuantity<Material>>(),
         });
+
+    return {
+        mora: costs.mora,
+        exp: costs.exp,
+        crown: costs.crown,
+        localSpecialties: [...costs.localSpecialtyMap.values()],
+        gems: [...costs.gemsMap.values()],
+        books: [...costs.booksMap.values()],
+        mobMaterials: [...costs.mobMaterialsMap.values()],
+        eliteMaterials: [...costs.eliteMaterialsMap.values()],
+        ascensionBossMaterials: [...costs.ascensionBossMaterialsMap.values()],
+        talentBossMaterials: [...costs.talentBossMaterialsMap.values()],
+    };
 });
 
+type TotalBuildCostReducer = {
+    mora: number,
+    exp: number,
+    crown: MaterialQuantity<Material>,
+    localSpecialtyMap: Map<number, MaterialQuantity<LocalSpecialty>>,
+    gemsMap: Map<number, TieredMaterialCost>,
+    booksMap: Map<number, TieredMaterialCost>,
+    mobMaterialsMap: Map<number, TieredMaterialCost>,
+    eliteMaterialsMap: Map<number, TieredMaterialCost>,
+    ascensionBossMaterialsMap: Map<number, MaterialQuantity<Material>>,
+    talentBossMaterialsMap: Map<number, MaterialQuantity<Material>>,
+}
+
 function calculateTalentCosts(
-    costs: TotalBuildCost,
+    costs: TotalBuildCostReducer,
     mats: TalentAscensionMaterials<ExpandedPayload>,
     req: TalentAscensionRequirement,
-    crown: Material,
     level: number,
     talent: string,
 ) {
     costs.mora += req.mora;
 
     if (isSimpleTalent(mats)) {
-        addQuantity(costs.materials, mats.monsterGroup.tiers[req.monsterMaterial.tier], req.monsterMaterial.quantity);
-        addQuantity(costs.materials, mats.bookSeries.tiers[req.book.tier], req.book.quantity);
+        costs.crown.quantity += req.crown ?? 0;
+        addTieredMaterialQuantity(costs.mobMaterialsMap, mats.monsterGroup, req.monsterMaterial);
+        addTieredMaterialQuantity(costs.booksMap, mats.bookSeries, req.book);
 
         if (req.bossMaterial) {
-            addQuantity(costs.materials, mats.bossMaterial!, req.bossMaterial!);
+            addMaterialQuantity(costs.talentBossMaterialsMap, mats.bossMaterial!, req.bossMaterial!);
         }
 
-        if (req.crown) {
-            addQuantity(costs.materials, crown, req.crown);
-        }
-    } else {
+        return;
     }
 }
 
 function calculateAscensionCosts(
-    costs: TotalBuildCost,
+    costs: TotalBuildCostReducer,
     mats: CharacterAscensionMaterials<ExpandedPayload>,
     req: CharacterAscensionRequirement,
 ): void {
     costs.mora += req.mora;
-    addQuantity(costs.materials, mats.localSpecialty, req.localSpecialty);
-    addQuantity(costs.materials, mats.gemGroup.tiers[req.gem.tier], req.gem.quantity);
-    addQuantity(costs.materials, mats.monsterGroup.tiers[req.monsterMaterial.tier], req.monsterMaterial.quantity);
+    addMaterialQuantity(costs.localSpecialtyMap, mats.localSpecialty, req.localSpecialty);
+    addTieredMaterialQuantity(costs.gemsMap, mats.gemGroup, req.gem);
+    addTieredMaterialQuantity(costs.mobMaterialsMap, mats.monsterGroup, req.monsterMaterial);
 
     if (req.bossMaterial) {
-        addQuantity(costs.materials, mats.bossMaterial!, req.bossMaterial!);
+        addMaterialQuantity(costs.ascensionBossMaterialsMap, mats.bossMaterial!, req.bossMaterial!);
     }
 }
 
-function addQuantity(map: Map<number, MaterialQuantity<Material>>, mat: Material, quantity: number) {
+function addMaterialQuantity<TMat extends Material>(map: Map<number, MaterialQuantity<TMat>>, mat: TMat, quantity: number) {
     if (map.has(mat.id)) {
         map.get(mat.id).quantity += quantity;
-    } else {
-        let groupId = undefined;
-        if (isGroup(mat)) {
-            groupId = mat.id;
-        }
-
-        map.set(mat.id, {
-            id: mat.id,
-            image: mat.image,
-            name: mat.name,
-            stars: mat.stars,
-            groupId,
-            quantity
-        });
+        return;
     }
+
+    map.set(mat.id, {
+        ...mat,
+        quantity
+    });
 }
 
+function addTieredMaterialQuantity(map: Map<number, TieredMaterialCost>, group: BaseGroup<ExpandedPayload, Material>, req: TieredRequirement) {
+    if (map.has(group.id)) {
+        map.get(group.id).tiers[req.tier].quantity += req.quantity;
+        return;
+    }
+
+    map.set(group.id, {
+        id: group.id,
+        group: group.group,
+        tiers: {
+            low: {
+                ...group.tiers.low,
+                quantity: req.tier === 'low' ? req.quantity : 0,
+            },
+            medium: {
+                ...group.tiers.medium,
+                quantity: req.tier === 'medium' ? req.quantity : 0,
+            },
+            high: {
+                ...group.tiers.high,
+                quantity: req.tier === 'high' ? req.quantity : 0,
+            },
+            highest: group.tiers.highest ? {
+                ...group.tiers.highest,
+                quantity: req.tier === 'highest' ? req.quantity : 0,
+            } : undefined,
+        },
+    });
+}

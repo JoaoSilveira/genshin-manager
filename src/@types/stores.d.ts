@@ -20,11 +20,19 @@ declare type CharacterBuild = {
 
 declare type MaterialQuantity<T> = T & {
     quantity: number,
-    groupId?: number,
 };
+
+declare type TieredMaterialCost = BaseGroup<ExpandedPayload, MaterialQuantity<Material>>;
 
 declare type TotalBuildCost = {
     exp: number,
     mora: number,
-    materials: Map<number, MaterialQuantity<Material>>,
+    crown: MaterialQuantity<Material>,
+    localSpecialties: MaterialQuantity<LocalSpecialty>[],
+    gems: TieredMaterialCost[],
+    books: TieredMaterialCost[],
+    mobMaterials: TieredMaterialCost[],
+    eliteMaterials: TieredMaterialCost[],
+    ascensionBossMaterials: MaterialQuantity<Material>[],
+    talentBossMaterials: MaterialQuantity<Material>[],
 };

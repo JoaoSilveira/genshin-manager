@@ -1,6 +1,5 @@
 import type { StartStopNotifier, Subscriber, Unsubscriber, Updater, Writable } from "svelte/store";
 
-
 class SubscriberManager<T> {
     private subs: Set<Subscriber<T>> = new Set();
 
@@ -25,7 +24,7 @@ export type Revive<T> = (json: any) => T;
 export type PersistenceConfig<T> = {
     parse: (value: string) => T,
     stringify: (value: T) => string,
-}
+};
 
 export default function localStorageStore<T>(key: string, value?: T, start?: StartStopNotifier<T>, config?: PersistenceConfig<T>): Writable<T> {
     const subs = new SubscriberManager<T>();
@@ -34,6 +33,8 @@ export default function localStorageStore<T>(key: string, value?: T, start?: Sta
         let stored = localStorage.getItem(key);
         if (stored) {
             value = config != null ? config.parse(stored) : JSON.parse(stored);
+        } else {
+            localStorage.setItem(key, config != null ? config.stringify(value) : JSON.stringify(value));
         }
     })();
 
