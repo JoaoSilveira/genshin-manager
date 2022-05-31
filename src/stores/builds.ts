@@ -1,6 +1,6 @@
-import { derived, writable } from "svelte/store"
+import { derived } from "svelte/store"
 import { isSimpleTalent } from "../lib/genshinDataTransform";
-import { isGroup, isSimpleMaterial } from "../lib/itemId";
+import { isSimpleMaterial } from "../lib/itemId";
 import { arrayToObject, sum } from "../lib/util";
 import { highlightedCharacter, selectedCharacters } from "./character";
 import genshinData from "./genshinData";

@@ -14,3 +14,7 @@ export function arrayToObject<TIn, TOut>(arr: TIn[], func: (item: TIn, index: nu
 export function sum(arr: number[]): number {
     return arr.reduce((acc, v) => acc + v, 0);
 }
+
+export function isNil(value: any): value is null | undefined {
+    return value == null;
+}

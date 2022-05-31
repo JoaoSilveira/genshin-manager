@@ -1,24 +1,5 @@
 import type { StartStopNotifier, Subscriber, Unsubscriber, Updater, Writable } from "svelte/store";
-
-class SubscriberManager<T> {
-    private subs: Set<Subscriber<T>> = new Set();
-
-    public get length(): number {
-        return this.subs.size;
-    }
-
-    subscribe(sub: Subscriber<T>): void {
-        this.subs.add(sub);
-    }
-
-    unsubscribe(sub: Subscriber<T>): void {
-        this.subs.delete(sub);
-    }
-
-    notify(value: T): void {
-        this.subs.forEach(sub => sub(value));
-    }
-}
+import { SubscriberManager } from "../lib/SubscriberManager";
 
 export type Revive<T> = (json: any) => T;
 export type PersistenceConfig<T> = {
