@@ -1,7 +1,7 @@
 <script lang="ts">
 	import genshin_data from "../data_test/genshin_data.json";
-	import Button from "./Button.svelte";
-	import Icon from "./Icon.svelte";
+	import Button from "./components/Button.svelte";
+	import Icon from "./components/Icon.svelte";
 
 	type TierObject = {
 		low: number;

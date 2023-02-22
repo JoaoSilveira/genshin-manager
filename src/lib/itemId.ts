@@ -1,5 +1,5 @@
-const TagShift = 3;
-const TagMask = 7;
+export const TagShift = 3;
+export const TagMask = 7;
 
 const enum MaterialType {
     Simple = 0,
