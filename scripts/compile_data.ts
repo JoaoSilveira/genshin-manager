@@ -22,16 +22,16 @@ const prod_urls = {
 };
 
 const debug_urls = {
-    character_exp: 'scripts/samples/character-exp.html',
-    character_list: 'scripts/samples/character-list.html',
-    weapon_exp: 'scripts/samples/weapon-exp.html',
-    weapon_list: 'scripts/samples/weapon-list.html',
-    weapon_atack_scaling: 'scripts/samples/weapon-attack.html',
-    weapon_sub_scaling: 'scripts/samples/weapon-sub.html',
-    common_ascension_materials: 'scripts/samples/common-ascension-material.html',
-    talent_materials: 'scripts/samples/talent-level-up-material.html',
-    character_ascension_meterials: 'scripts/samples/character-ascension-material.html',
-    weapon_ascension_meterials: 'scripts/samples/weapon-ascension-material.html',
+    character_exp: 'samples/character-exp.html',
+    character_list: 'samples/character-list.html',
+    weapon_exp: 'samples/weapon-exp.html',
+    weapon_list: 'samples/weapon-list.html',
+    weapon_atack_scaling: 'samples/weapon-attack.html',
+    weapon_sub_scaling: 'samples/weapon-sub.html',
+    common_ascension_materials: 'samples/common-ascension-material.html',
+    talent_materials: 'samples/talent-level-up-material.html',
+    character_ascension_meterials: 'samples/character-ascension-material.html',
+    weapon_ascension_meterials: 'samples/weapon-ascension-material.html',
 };
 
 export const urls = IsProduction ? prod_urls : debug_urls;
@@ -42,20 +42,16 @@ export const factors = {
 };
 
 async function build() {
-    const [characters, experience, [weapons, baseInfo, subInfo], materials] = await Promise.all([
-        true ?? fetchCharacterData(),
-        true ?? fetchExperienceData(),
-        fetchWeaponData(),
-        true ?? fetchMaterials(),
-    ]);
-
-    await Promise.all([
-        // writeFile('data_test/characters.json', JSON.stringify(characters)),
-        // writeFile('data_test/experience.json', JSON.stringify(experience)),
-        // writeFile('data_test/weapons.json', JSON.stringify(weapons)),
-        // writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
-        // writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
-        // writeFile('data_test/materials.json', JSON.stringify(materials)),
+    return Promise.all([
+        fetchCharacterData().then(data => writeFile('data_test/characters.json', JSON.stringify(data))),
+        false && fetchExperienceData().then(data => writeFile('data_test/experience.json', JSON.stringify(data))),
+        false && fetchWeaponData()
+            .then(([weapons, baseInfo, subInfo]) => Promise.all([
+                writeFile('data_test/weapons.json', JSON.stringify(weapons)),
+                writeFile('data_test/baseInfo.json', JSON.stringify(baseInfo)),
+                writeFile('data_test/subInfo.json', JSON.stringify(subInfo)),
+            ])),
+        false && fetchMaterials().then(data => writeFile('data_test/materials.json', JSON.stringify(data))),
     ]);
 }
 
@@ -105,4 +101,6 @@ async function transform() {
     await writeFile('data_test/genshin_data.json', JSON.stringify(manager.serialize()));
 }
 
+// fetchWeaponData().then(r => console.log(JSON.stringify(r, undefined, 2)), console.error);
+// build();
 transform();

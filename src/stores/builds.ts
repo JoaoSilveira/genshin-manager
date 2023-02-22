@@ -50,7 +50,15 @@ function buildStore() {
 }
 
 export const builds = buildStore();
-export const activeBuild = derived([builds, highlightedCharacter], ([$builds, $highlighted]) => $builds[$highlighted]);
+export const activeBuild = derived([builds, highlightedCharacter], ([$builds, $highlighted]) => {
+    if ($builds[$highlighted] == null) {
+        const newBuild = { name: $highlighted, ...InitialBuild };
+        builds.updateBuild(newBuild);
+
+        return newBuild;
+    }
+    return $builds[$highlighted];
+});
 export const totalCost = derived([builds, selectedCharacters], ([$builds, $selectedCharacters]): TotalBuildCost => {
     if (!genshinData || !$builds || !$selectedCharacters) return undefined;
 
@@ -70,12 +78,19 @@ export const totalCost = derived([builds, selectedCharacters], ([$builds, $selec
 
     [...$selectedCharacters.values()]
         .map(sc => $builds[sc])
+        .filter(b => b != null)
         .forEach(build => {
             const character = genshinData.character.list.find(c => c.name === build.name);
+            if (character == null) {
+                console.warn(`build for ${build.name} not found`);
+                return;
+            }
 
             const exp = sum(genshinData.character.exp.slice(build.level.start.level - 1, build.level.end.level - 1));
             costs.exp += exp;
             costs.mora += Math.ceil(exp / 5);
+
+            console.log(build.name, build.talents.basic, genshinData.character.talent)
 
             genshinData.character
                 .ascension

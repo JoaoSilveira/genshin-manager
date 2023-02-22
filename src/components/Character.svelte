@@ -32,7 +32,7 @@
         border: 1px solid transparent;
 
         &.selected {
-            border-color: black;
+            border-color: white;
         }
     }
 

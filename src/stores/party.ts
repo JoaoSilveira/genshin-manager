@@ -1,4 +1,4 @@
-import { derived, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import { isNil } from "../lib/util";
 import localStorageStore from "./localStorageStore";
 
@@ -28,12 +28,14 @@ type CharacterBuild = Progress<CharacterSnapshot>;
 type WeaponBuild = Progress<WeaponSnapshop>;
 
 type Build = {
+    active: boolean,
     character: CharacterBuild,
     weapon: WeaponBuild,
 };
 
-type Party = {
+export type Party = {
     name: string,
+    thumbnailCharacter: string,
     notes?: string,
     // map character name -> build
     builds: Map<string, Build>,
@@ -41,6 +43,7 @@ type Party = {
 
 type PersistedParty = {
     name: string,
+    thumbnailCharacter: string,
     notes?: string,
     builds: Record<string, Build>,
 }
@@ -72,29 +75,73 @@ function buildPartiesStore() {
 
     return {
         subscribe: parties.subscribe,
-        // todo:
-        add: () => { },
-        // todo:
-        remove: () => { },
-        // todo: place party in index (for sorting parties)
-        move: () => { },
-        // todo:
-        update: () => { },
+        add: (party: Party) => void (parties.update(current => [...current, party])),
+        remove: (party: Party) => void (parties.update(current => {
+            const index = current.indexOf(party);
+            if (index < 0 || index >= current.length) return current;
+
+            current.splice(index, 1);
+            return [...current];
+        })),
+        // move: (index: number, position: number) => void (parties.update(current => {
+        //     if (index < 0 || index >= current.length) return current;
+        //     if (position < 0 || position > current.length) return current;
+
+        //     const value = current[index];
+        //     current.splice(index, 1);
+        //     return [...current.slice(0, position), value, ...current.slice(position)];
+        // })),
+        update: (index: number, party: Party) => void (parties.update(current => {
+            if (index < 0 || index >= current.length) return current;
+
+            current[index] = party;
+            return [...current];
+        })),
     };
 }
 
 function buildActivePartyStore() {
-    const index = localStorageStore<number>(null);
-    const value = derived([parties, index], ([$parties, $index]) => isNil($index) ? null : $parties[$index]);
+    const index = localStorageStore<number>('active-party', null);
+    const value = derived([parties, index], ([$parties, $index]) => isNil($index) || $index < 0 || $index >= $parties.length ? null : $parties[$index]);
 
     return {
         subscribe: value.subscribe,
-        // todo: add char to party
-        add: () => { },
-        // todo:
-        remove: () => { },
-        // todo: set active party, maybe use `set`
-        setActive: () => { },
+        setBuild: (character: string, build: Build) => {
+            const idx = get(index);
+            const arr = get(parties);
+
+            if (idx == null || idx < 0 || idx >= arr.length) return;
+            const party = arr[idx];
+
+            party.builds.set(character, build);
+            parties.update(idx, party);
+        },
+        removeBuild: (character: string) => {
+            const partyIndex = get(index);
+            const arr = get(parties);
+
+            if (partyIndex == null || partyIndex < 0 || partyIndex >= arr.length) return;
+            const party = arr[partyIndex];
+
+            if (party.builds.has(character)) {
+                party.builds.get(character).active = false;
+            }
+
+            parties.update(partyIndex, party);
+        },
+        setActive: (party: Party | null) => {
+            if (party == null) {
+                index.set(null);
+                return;
+            }
+
+            const arr = get(parties);
+            const newIndex = arr.indexOf(party);
+
+            if (newIndex >= 0) {
+                index.set(newIndex);
+            }
+        },
     };
 }
 
@@ -104,6 +151,12 @@ function buildActiveBuildStore() {
 
     return {
         subscribe: value.subscribe,
+        update: (build: Build) => {
+            const charName = get(char);
+            if (isNil(charName)) return;
+
+            activeParty.setBuild(charName, build);
+        },
         // todo: update parties store to update build
         refresh: () => { },
     };
@@ -113,5 +166,5 @@ export const parties = buildPartiesStore();
 export const activeParty = buildActivePartyStore();
 export const activeBuild = buildActiveBuildStore();
 export const partyCost = derived(activeParty, ($party) => {
-    
+
 });

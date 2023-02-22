@@ -28,19 +28,22 @@ export async function extractWeaponList(): Promise<Weapon[]> {
     const doc = await fetchPage(urls.weapon_list);
     const handle = traverseElement(doc.querySelector('#List_of_All_Weapons'), '^>>v');
 
-    return await Promise.all(
-        [...htmlChildren(handle)]
-            .slice(1)
-            .map(processWeaponRow)
-            .map(extendWeapon)
-    );
+    try {
+        return await Promise.all(
+            [...htmlChildren(handle)]
+                .slice(1)
+                .map(processWeaponRow)
+                .map(extendWeapon)
+        );
+    } catch (err) {
+        throw new Error(`extractWeaponList: ${err}`);
+    }
 }
 
 function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
     const link = traverseElement(handle, 'vv');
     const atackStatus = parseStatusValue(traverseElement(handle, '$<<').textContent);
     const subStatus = parseStatusValue(traverseElement(handle, '$<').textContent);
-
 
     return {
         url: linkFromPath(link.attributes['href']),
@@ -59,20 +62,37 @@ function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
 }
 
 async function extendWeapon(partial: RowToExtend<PartialWeapon>): Promise<Weapon> {
-    const doc = await fetchPage(IsProduction ? partial.url : "scripts/samples/weapon-sample.html");
-    const [attackScaling, subScaling] = extractAttackScaling(doc);
+    try {
+        const doc = await fetchPage(IsProduction ? partial.url : "samples/weapon-sample.html");
+        const ascension = extractAscensionData(doc);
+        const [attackScaling, subScaling] = extractAttackScaling(doc);
 
-    return {
-        ...partial.data,
-        ascension: extractAscensionData(doc),
-        attackScaling,
-        subScaling,
-    };
+        if (attackScaling == null) {
+            console.warn(`${partial.url} - no scaling`);
+        }
+
+        if (ascension == null) {
+            console.warn(`${partial.url} - no ascension`);
+        }
+
+        return {
+            ...partial.data,
+            ascension,
+            attackScaling,
+            subScaling,
+        };
+    } catch (err) {
+        throw new Error(`extendWeapon: ${IsProduction ? partial.url : "samples/weapon-sample.html"} ${err}`);
+    }
 }
 
 function extractAttackScaling(doc: HTMLElement): [number[], number[]] {
     const header = doc.querySelector('#Ascensions_and_Stats') ?? doc.querySelector('#Ascensions');
-    let row = traverseElement(header, '^>vv>');
+    if (header == null) {
+        return [undefined, undefined];
+    }
+
+    let row = traverseElement(header, '^>>vv>');
     const hasSub = [...htmlChildren(row)].length === 4;
 
     const attack = new Set<number>();

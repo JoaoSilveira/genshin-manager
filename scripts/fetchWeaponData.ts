@@ -21,32 +21,36 @@ type BaseAttackInfo = {
 }
 
 async function fetchBaseAttackInfo(): Promise<BaseAttackInfo> {
-    const doc = await fetchPage(urls.weapon_atack_scaling);
-    const data: BaseAttackInfo = {};
+    try {
+        const doc = await fetchPage(urls.weapon_atack_scaling);
+        const data: BaseAttackInfo = {};
 
-    for (let i = 5; i > 0; i--) {
-        let table = traverseElement(doc.querySelector(`#${i}-Star_Weapons`), '^>');
-        data[`${i} Stars`] = [];
+        for (let i = 5; i > 0; i--) {
+            let table = traverseElement(doc.querySelector(`#${i}-Star_Weapons`), '^>');
+            data[`${i} Stars`] = [];
 
-        while (table?.tagName === 'TABLE') {
-            const handle = traverseElement(table, 'vv');
+            while (table?.tagName === 'TABLE') {
+                const handle = traverseElement(table, 'vv');
 
-            const { description: weaponBaseType, values: levels } = parseWeaponStatusRow(handle);
-            const { values: beforeAscension } = parseWeaponStatusRow(handle.nextElementSibling);
-            const { values: afterAscension } = parseWeaponStatusRow(handle.nextElementSibling.nextElementSibling);
+                const { description: weaponBaseType, values: levels } = parseWeaponStatusRow(handle);
+                const { values: beforeAscension } = parseWeaponStatusRow(handle.nextElementSibling);
+                const { values: afterAscension } = parseWeaponStatusRow(handle.nextElementSibling.nextElementSibling);
 
-            data[`${i} Stars`].push({
-                baseType: weaponBaseType,
-                levels,
-                beforeAscension,
-                afterAscension,
-            });
+                data[`${i} Stars`].push({
+                    baseType: weaponBaseType,
+                    levels,
+                    beforeAscension,
+                    afterAscension,
+                });
 
-            table = table.nextElementSibling;
+                table = table.nextElementSibling;
+            }
         }
-    }
 
-    return data;
+        return data;
+    } catch (err) {
+        throw new Error(`fetchBaseAttackInfo: ${err}`);
+    }
 }
 
 type WeaponStatusRow = {
@@ -86,22 +90,26 @@ type SubStatusInfo = {
 }
 
 async function fetchSubInfo(): Promise<SubStatusInfo> {
-    const doc = await fetchPage(urls.weapon_sub_scaling);
+    try {
+        const doc = await fetchPage(urls.weapon_sub_scaling);
 
-    const percHandle = traverseElement(doc.querySelector('#Percentage_Value_Growth_Pattern'), '^>v');
-    const [percFirst, ...percValues] = [...htmlChildren(percHandle)].map(row => [...htmlChildren(row)].map(el => el.textContent.trim()));
+        const percHandle = traverseElement(doc.querySelector('#Percentage_Value_Growth_Pattern'), '^>v');
+        const [percFirst, ...percValues] = [...htmlChildren(percHandle)].map(row => [...htmlChildren(row)].map(el => el.textContent.trim()));
 
-    const absHandle = traverseElement(doc.querySelector('#Elemental_Mastery_Growth_Pattern'), '^>v');
-    const [absFirst, ...absValues] = [...htmlChildren(absHandle)].map(row => [...htmlChildren(row)].map(el => el.textContent.trim()));
+        const absHandle = traverseElement(doc.querySelector('#Elemental_Mastery_Growth_Pattern'), '^>v');
+        const [absFirst, ...absValues] = [...htmlChildren(absHandle)].map(row => [...htmlChildren(row)].map(el => el.textContent.trim()));
 
-    return {
-        percentual: {
-            levels: percFirst.map((lvl, i) => i === 0 ? 1 : parseInt(lvl.substring(3))),
-            values: percValues.map(row => row.map(v => parseFloat(v))),
-        },
-        absolute: {
-            levels: absFirst.map((lvl, i) => i === 0 ? 1 : parseInt(lvl.substring(3))),
-            values: absValues.map(row => row.map(v => parseFloat(v))),
-        },
-    };
+        return {
+            percentual: {
+                levels: percFirst.map((lvl, i) => i === 0 ? 1 : parseInt(lvl.substring(3))),
+                values: percValues.map(row => row.map(v => parseFloat(v))),
+            },
+            absolute: {
+                levels: absFirst.map((lvl, i) => i === 0 ? 1 : parseInt(lvl.substring(3))),
+                values: absValues.map(row => row.map(v => parseFloat(v))),
+            },
+        };
+    } catch (err) {
+        throw new Error(`fetchSubInfo: ${err}`);
+    }
 }

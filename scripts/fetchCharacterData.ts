@@ -22,12 +22,17 @@ export async function fetchCharacterData(): Promise<Character[]> {
     const listDoc = await fetchPage(urls.character_list);
     const tableList = traverseElement(listDoc.querySelector('#Playable_Characters'), '^>>v');
 
-    return await Promise.all(
-        [...htmlChildren(tableList)]
-            .slice(1)
-            .map(processRow)
-            .map(extendCharacter)
-    );
+    try {
+        return await Promise.all(
+            [...htmlChildren(tableList)]
+                .slice(1)
+                .map(processRow)
+                .map(extendCharacter)
+        );
+    }
+    catch (err) {
+        throw new Error(`fetchCharacterData: ${err}`);
+    }
 }
 
 function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
@@ -37,20 +42,22 @@ function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
             name: sanitizeName(traverseElement(row, 'v>v')),
             image: getImageUrl(traverseElement(row, 'vvv')),
             stars: traverseElement(row, 'v>>v').attributes['title'],
-            element: parseImageDescriptionColumn(traverseElement(row, '$<<vv')),
-            weapon: parseImageDescriptionColumn(traverseElement(row, '$<vv')),
-            region: requireStringValue(lastHtmlChild(row).textContent.trim()),
+            element: parseImageDescriptionColumn(traverseElement(row, '$<<<vv')),
+            weapon: parseImageDescriptionColumn(traverseElement(row, '$<<vv')),
+            region: requireStringValue(traverseElement(row, '$<').textContent.trim()),
         },
     };
 }
 
 async function extendCharacter(row: RowToExtend<PartialCharacter>): Promise<Character> {
-    const doc = await fetchPage(IsProduction ? row.url : 'scripts/samples/character-sample.html');
+    const doc = await fetchPage(IsProduction ? row.url : 'samples/character-sample.html');
 
+    const talent = extractTalentData(doc);
+    const ascension = extractAscensionData(doc);
     return {
         ...row.data,
-        talentCosts: extractTalentData(doc),
-        ascensionCosts: extractAscensionData(doc),
+        talentCosts: talent,
+        ascensionCosts: ascension,
     };
 }
 

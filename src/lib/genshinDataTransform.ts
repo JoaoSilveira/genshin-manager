@@ -3,6 +3,8 @@ import { indexOf, isGroup, isWeeklyBossGroup } from "./itemId";
 export default function genshinDataTransform(pristine: GenshinDataPristine): GenshinDataExpanded {
     const items = transformItems(pristine.items);
 
+    console.log(JSON.stringify(pristine.character.talent, undefined, 2))
+
     return {
         levelBarriers: pristine.levelBarriers,
         items,
@@ -116,7 +118,7 @@ function transformWeapons(weapons: Weapon<PristinePayload>[], items: Identifiabl
             scaling: scaling.sub[w.subStatus.scaling],
         },
         scaling: joinWeaponScaling(scaling.attackBefore[w.scaling], scaling.attackAfter[w.scaling]),
-        ascension: {
+        ascension: (w.ascension || undefined) && {
             commonMaterial: items[indexOf(w.ascension.commonMaterial)] as MonsterDropGroup<ExpandedPayload>,
             eliteMaterial: items[indexOf(w.ascension.eliteMaterial)] as MonsterDropGroup<ExpandedPayload>,
             weaponMaterial: items[indexOf(w.ascension.weaponMaterial)] as AscentionMaterialGroup<ExpandedPayload>,

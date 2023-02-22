@@ -605,7 +605,7 @@ export class Manager {
             stars: parseInt(w.stars.substring(0, 1)),
             subStatus: this.resolveWeaponSubStatus(w),
             scaling: this.weaponStatus.attackScalingIndex(w),
-            ascension: {
+            ascension: (w.ascension || undefined) && {
                 weaponMaterial: this.items.getGroupIdByName(w.ascension[0][1].name),
                 eliteMaterial: this.items.getGroupIdByName(w.ascension[0][2].name),
                 commonMaterial: this.items.getGroupIdByName(w.ascension[0][3].name),

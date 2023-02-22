@@ -9,6 +9,7 @@ export type TalentCostType = TalentCostMap | MaterialWithQuantity[][];
 
 export function extractTalentData(doc: HTMLElement): TalentCostType {
     const talents = doc.querySelectorAll('#Single_Talent_Leveling');
+
     if (talents.length > 0) {
         return extractMultiple(talents);
     }
@@ -45,19 +46,26 @@ function extractByTopic(handle: HTMLElement): TalentCostMap {
 function extractSingle(talent: HTMLElement): MaterialWithQuantity[][] {
     const data: MaterialWithQuantity[][] = [];
 
+    let span = 0;
     while (talent != null) {
         const requisitesData: MaterialWithQuantity[] = [];
-        let requisites = firstHtmlChild(talent);
-        while (firstHtmlChild(requisites)?.tagName !== 'DIV') {
+        let requisites = traverseElement(talent, 'v>');
+
+        if (span <= 0) {
+            span = parseInt(requisites.attributes['rowspan'] ?? '0');
             requisites = requisites.nextElementSibling;
         }
 
-        while (firstHtmlChild(requisites) != null) {
-            requisitesData.push(extractMaterialAndQuantity(firstHtmlChild(requisites)));
+        while (requisites != null) {
+            const item = traverseElement(requisites, 'vv');
+            if (item) {
+                requisitesData.push(extractMaterialAndQuantity(item));
+            }
 
             requisites = requisites.nextElementSibling;
         }
 
+        span -= 1;
         data.push(requisitesData);
         talent = talent.nextElementSibling;
     }

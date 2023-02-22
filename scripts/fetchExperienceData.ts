@@ -39,34 +39,42 @@ async function fetchCharacterExperienceData(): Promise<CharacterExperience> {
 }
 
 function extractCharacterExpPerLevel(doc: HTMLElement): LevelExperience[] {
-    const tableList = traverseElement(doc.querySelector('#EXP_Per_Level'), '^>v');
-    const data: LevelExperience[] = [];
+    try {
+        const tableList = traverseElement(doc.querySelector('#EXP_Per_Level'), '^>v');
+        const data: LevelExperience[] = [];
 
-    for (const li of htmlChildren(tableList)) {
-        let row = traverseElement(li, '$vv>');
+        for (const li of htmlChildren(tableList)) {
+            let row = traverseElement(li, '$vv>');
 
-        while (row != null) {
-            data.push({
-                level: parseIntWithCommas(firstHtmlChild(row).textContent),
-                toNext: parseIntWithCommas(nthHtmlChild(row, 1).textContent),
-            });
+            while (row != null) {
+                data.push({
+                    level: parseIntWithCommas(firstHtmlChild(row).textContent),
+                    toNext: parseIntWithCommas(nthHtmlChild(row, 1).textContent),
+                });
 
-            row = row.nextElementSibling;
+                row = row.nextElementSibling;
+            }
         }
-    }
 
-    return data;
+        return data;
+    } catch (err) {
+        throw new Error(`extractCharacterExpPerLevel: ${err}`);
+    }
 }
 
 function extractCharacterExpItems(doc: HTMLElement): MaterialWithQuantity[] {
-    const handle = traverseElement(doc.querySelector('#Leveling_Characters'), '^>>vv>v>');
+    try {
+        const handle = traverseElement(doc.querySelector('#Leveling_Characters'), '^>>vv>v>');
 
-    // hardcoding quantity because I didn't find an easy way to get the values
-    return [
-        { ...extractMaterial(traverseElement(handle, 'vv')), quantity: 20000 },
-        { ...extractMaterial(traverseElement(handle, 'v>>v')), quantity: 5000 },
-        { ...extractMaterial(traverseElement(handle, '$<v')), quantity: 1000 },
-    ];
+        // hardcoding quantity because I didn't find an easy way to get the values
+        return [
+            { ...extractMaterial(traverseElement(handle, 'vv')), quantity: 20000 },
+            { ...extractMaterial(traverseElement(handle, 'v>>v')), quantity: 5000 },
+            { ...extractMaterial(traverseElement(handle, '$<v')), quantity: 1000 },
+        ];
+    } catch (err) {
+        throw new Error(`extractCharacterExpItems: ${err}`);
+    }
 }
 
 type WeaponExperience = {
@@ -84,45 +92,53 @@ async function fetchWeaponExperienceData(): Promise<WeaponExperience> {
 }
 
 function extractWeaponExpItems(doc: HTMLElement): MaterialWithQuantity[] {
-    let handle = traverseElement(doc.querySelector('#Weapon_Enhancement_Material'), '^>>');
-    const items: MaterialWithQuantity[] = [];
+    try {
+        let handle = traverseElement(doc.querySelector('#Weapon_Enhancement_Material'), '^>>');
+        const items: MaterialWithQuantity[] = [];
 
-    for (let i = 0; i < 3; i++) {
-        items.push(extractMaterialAndQuantity(firstHtmlChild(handle), txt => txt.substring(0, txt.length - 3)));
+        for (let i = 0; i < 3; i++) {
+            items.push(extractMaterialAndQuantity(firstHtmlChild(handle), txt => txt.substring(0, txt.length - 3)));
 
-        handle = traverseElement(handle, '>>');
+            handle = traverseElement(handle, '>>');
+        }
+
+        return items;
+    } catch (err) {
+        throw new Error(`extractWeaponExpItems: ${err}`);
     }
-
-    return items;
 }
 
 function extractWeaponExpPerLevel(doc: HTMLElement): WeaponExperience['expPerLevel'] {
-    let handle = traverseElement(doc.querySelector('#Weapon_EXP_Chart'), '^>>v>');
-    const data: WeaponExperience['expPerLevel'] = {};
+    try {
+        let handle = traverseElement(doc.querySelector('#Weapon_EXP_Chart'), '^>>v>');
+        const data: WeaponExperience['expPerLevel'] = {};
 
-    while (handle) {
-        const stars = traverseElement(handle, 'v>v').textContent.trim();
-        let tr = traverseElement(handle, 'v>>>vv>');
+        while (handle) {
+            const stars = traverseElement(handle, 'v>v').textContent.trim();
+            let tr = traverseElement(handle, 'v>>>vv>');
 
-        data[stars] = [];
+            data[stars] = [];
 
-        while (tr) {
-            const children = [...htmlChildren(tr)];
+            while (tr) {
+                const children = [...htmlChildren(tr)];
 
-            for (let i = 0; i < children.length; i += 3) {
-                data[stars].push({
-                    level: parseInt(children[i].textContent),
-                    toNext: parseIntWithCommas(children[i + 1].textContent),
-                });
+                for (let i = 0; i < children.length; i += 3) {
+                    data[stars].push({
+                        level: parseInt(children[i].textContent),
+                        toNext: parseIntWithCommas(children[i + 1].textContent),
+                    });
+                }
+
+                tr = tr.nextElementSibling;
             }
 
-            tr = tr.nextElementSibling;
+            data[stars].sort((a, b) => a.level - b.level);
+
+            handle = handle.nextElementSibling;
         }
 
-        data[stars].sort((a, b) => a.level - b.level);
-
-        handle = handle.nextElementSibling;
+        return data;
+    } catch (err) {
+        throw new Error(`extractWeaponExpPerLevel: ${err}`);
     }
-
-    return data;
 }
