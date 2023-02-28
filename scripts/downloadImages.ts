@@ -75,17 +75,17 @@ async function run(): Promise<void> {
                 continue;
             }
 
-            item[ext.image] = item[ext.image].substring('public/'.length);
+            item[ext.image] = item[ext.image].substring('docs/'.length);
 
             // try {
-            //     await downloadImage(item[ext.image], `public/images/${out}/${processName(item[ext.description])}.png`);
+            //     await downloadImage(item[ext.image], `docs/images/${out}/${processName(item[ext.description])}.png`);
             // } catch (e) {
             //     console.error(e);
             // }
         }
 
         // const promises = list.filter(i => (ext.image in i) && (ext.description in i))
-        //     .map(i => [i[ext.image], `public/images/${out}/${processName(i[ext.description])}.png`])
+        //     .map(i => [i[ext.image], `docs/images/${out}/${processName(i[ext.description])}.png`])
         //     .map(t => downloadImage.apply(undefined, t));
 
         // const settled = await Promise.allSettled(promises);

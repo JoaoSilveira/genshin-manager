@@ -1,5 +1,5 @@
 /node_modules/
-/public/build/
+/docs/build/bundle.js.map
 /bin
 /data_test
 /scripts/samples
