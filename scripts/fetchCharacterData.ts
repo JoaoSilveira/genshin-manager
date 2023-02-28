@@ -62,7 +62,7 @@ export function processCharacterRow(row: HTMLElement): RowToExtend<PartialCharac
 
 export async function extendCharacter(row: RowToExtend<PartialCharacter>): Promise<Character> {
     try {
-        const doc = await fetchPage(IsProduction ? row.url : 'samples/character-sample.html');
+        const doc = await fetchPage(IsProduction ? row.url : 'scripts/samples/character-sample.html');
 
         const talent = extractTalentData(doc);
         const ascension = extractAscensionData(doc);

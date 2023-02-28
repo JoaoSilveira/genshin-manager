@@ -3,7 +3,7 @@ import axios, { type AxiosResponse } from 'axios';
 import type { HTMLElement } from 'node-html-parser';
 import { readFile } from 'fs/promises';
 
-export const IsProduction = false;
+export const IsProduction = true;
 
 function isSuccess(request: AxiosResponse<any, any>): boolean {
     return Math.floor(request.status / 100) == 2;
@@ -211,21 +211,16 @@ export function extractMaterial(container: HTMLElement): Material {
         .split(' ')
         .find(cls => cls.startsWith('card-rarity-') && cls.length === 13);
 
-    return log('material', {
+    return {
         name: url.attributes['title'],
         image: getImageUrl(firstHtmlChild(url)),
         stars: parseInt(card.substring(12)),
-    });
+    };
 }
 
 export type MaterialWithQuantity = Material & {
     quantity: number,
 };
-
-function log<T>(message: string, a: T): T {
-    console.log(message, a);
-    return a;
-}
 
 export function extractMaterialAndQuantity(container: HTMLElement, transform: (text: string) => string = undefined): MaterialWithQuantity {
     const text = container.querySelector('.card-text').textContent;

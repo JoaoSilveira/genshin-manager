@@ -166,6 +166,6 @@ async function updateCharacters() {
     }
 }
 
-// fetchMaterials().then(data => writeFile('data_test/materials.json', JSON.stringify(data)));
+// fetchCharacterData().then(data => writeFile('data_test/characters.json', JSON.stringify(data)))
 // build();
 transform();

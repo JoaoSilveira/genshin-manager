@@ -1,5 +1,5 @@
 import type { HTMLElement } from 'node-html-parser';
-import { extractMaterialAndQuantity, getImageUrl, type MaterialWithQuantity, parseIntWithCommas, traverseElement } from './util';
+import { extractMaterialAndQuantity, getImageUrl, type MaterialWithQuantity, parseIntWithCommas, traverseElement, firstHtmlChild } from './util';
 
 export function extractAscensionData(doc: HTMLElement): MaterialWithQuantity[][] {
     try {
@@ -16,7 +16,7 @@ export function extractAscensionData(doc: HTMLElement): MaterialWithQuantity[][]
             let requisites = traverseElement(ascension, 'vv>>');
             
             if (requisites.tagName === 'SPAN')
-                requisites = requisites.firstChild as HTMLElement;
+                requisites = firstHtmlChild(requisites);
 
             const requisitesData: MaterialWithQuantity[] = [];
 
