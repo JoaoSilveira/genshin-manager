@@ -1,7 +1,7 @@
 import { urls } from "./compile_data";
 import { fetchPage, htmlChildren, traverseElement } from "./util";
 import type { HTMLElement } from 'node-html-parser';
-import { extractWeaponList, Weapon } from "./extractWeaponList";
+import { extractWeaponList, type Weapon } from "./extractWeaponList";
 
 export async function fetchWeaponData(): Promise<[Weapon[], BaseAttackInfo, SubStatusInfo]> {
     return await Promise.all([

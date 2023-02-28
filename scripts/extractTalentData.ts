@@ -1,5 +1,5 @@
 import type { HTMLElement } from 'node-html-parser';
-import { extractMaterialAndQuantity, findNextByTag, firstHtmlChild, htmlChildren, indexInParent, MaterialWithQuantity, traverseElement } from './util';
+import { extractMaterialAndQuantity, findNextByTag, firstHtmlChild, htmlChildren, indexInParent, type MaterialWithQuantity, traverseElement } from './util';
 
 type TalentCostMap = {
     [key: string]: MaterialWithQuantity[][] | { [otherKey: string]: MaterialWithQuantity[][] }
@@ -44,31 +44,35 @@ function extractByTopic(handle: HTMLElement): TalentCostMap {
 }
 
 function extractSingle(talent: HTMLElement): MaterialWithQuantity[][] {
-    const data: MaterialWithQuantity[][] = [];
+    try {
+        const data: MaterialWithQuantity[][] = [];
 
-    let span = 0;
-    while (talent != null) {
-        const requisitesData: MaterialWithQuantity[] = [];
-        let requisites = traverseElement(talent, 'v>');
+        let span = 0;
+        while (talent != null) {
+            const requisitesData: MaterialWithQuantity[] = [];
+            let requisites = traverseElement(talent, 'v>');
 
-        if (span <= 0) {
-            span = parseInt(requisites.attributes['rowspan'] ?? '0');
-            requisites = requisites.nextElementSibling;
-        }
+            if (span <= 0) {
+                span = parseInt(requisites.attributes['rowspan'] ?? '0');
+                requisites = requisites.nextElementSibling;
+            }
+            
+            while (requisites != null) {
+                const item = traverseElement(requisites, 'v');
+                if (item) {
+                    requisitesData.push(extractMaterialAndQuantity(item));
+                }
 
-        while (requisites != null) {
-            const item = traverseElement(requisites, 'vv');
-            if (item) {
-                requisitesData.push(extractMaterialAndQuantity(item));
+                requisites = requisites.nextElementSibling;
             }
 
-            requisites = requisites.nextElementSibling;
+            span -= 1;
+            data.push(requisitesData);
+            talent = talent.nextElementSibling;
         }
 
-        span -= 1;
-        data.push(requisitesData);
-        talent = talent.nextElementSibling;
+        return data;
+    } catch (error) {
+        throw new Error(`failed to extract talent`);
     }
-
-    return data;
 }

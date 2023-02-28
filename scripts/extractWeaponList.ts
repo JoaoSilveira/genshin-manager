@@ -1,7 +1,12 @@
 import { urls } from "./compile_data";
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, linkFromPath, MaterialWithQuantity, traverseElement } from "./util";
+import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, linkFromPath, type MaterialWithQuantity, traverseElement } from "./util";
 import type { HTMLElement } from 'node-html-parser';
 import { extractAscensionData } from "./extractAscensionData";
+
+declare type RowToExtend<P> = {
+    url: string,
+    data: P,
+};
 
 type PartialWeapon = {
     name: string,
@@ -40,7 +45,7 @@ export async function extractWeaponList(): Promise<Weapon[]> {
     }
 }
 
-function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
+export function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
     const link = traverseElement(handle, 'vv');
     const atackStatus = parseStatusValue(traverseElement(handle, '$<<').textContent);
     const subStatus = parseStatusValue(traverseElement(handle, '$<').textContent);
@@ -61,7 +66,7 @@ function processWeaponRow(handle: HTMLElement): RowToExtend<PartialWeapon> {
     };
 }
 
-async function extendWeapon(partial: RowToExtend<PartialWeapon>): Promise<Weapon> {
+export async function extendWeapon(partial: RowToExtend<PartialWeapon>): Promise<Weapon> {
     try {
         const doc = await fetchPage(IsProduction ? partial.url : "samples/weapon-sample.html");
         const ascension = extractAscensionData(doc);

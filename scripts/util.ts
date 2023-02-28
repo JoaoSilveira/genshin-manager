@@ -48,6 +48,14 @@ export function* htmlChildren(element: Node): IterableIterator<HTMLElement> {
     }
 }
 
+export function findChildByTag(element: HTMLElement, tag: string) {
+    while (element != null && element.tagName !== tag) {
+        element = firstHtmlChild(element);
+    }
+
+    return element;
+}
+
 export function firstHtmlChild(element: Node): HTMLElement | undefined {
     if (!element) {
         return undefined;
@@ -198,24 +206,29 @@ export type Material = {
 };
 
 export function extractMaterial(container: HTMLElement): Material {
-    const url = traverseElement(container, 'vv');
-    const card = container.attributes['class']
+    const url = traverseElement(container, 'vvvvv');
+    const card = traverseElement(container, 'vvv').attributes['class']
         .split(' ')
-        .find(cls => cls.startsWith('card_') && cls.length === 6);
+        .find(cls => cls.startsWith('card-rarity-') && cls.length === 13);
 
-    return {
+    return log('material', {
         name: url.attributes['title'],
         image: getImageUrl(firstHtmlChild(url)),
-        stars: parseInt(card.substring(5)),
-    };
+        stars: parseInt(card.substring(12)),
+    });
 }
 
 export type MaterialWithQuantity = Material & {
     quantity: number,
 };
 
+function log<T>(message: string, a: T): T {
+    console.log(message, a);
+    return a;
+}
+
 export function extractMaterialAndQuantity(container: HTMLElement, transform: (text: string) => string = undefined): MaterialWithQuantity {
-    const text = container.querySelector('.card_text').textContent;
+    const text = container.querySelector('.card-text').textContent;
 
     return {
         ...extractMaterial(container),

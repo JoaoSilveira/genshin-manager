@@ -1,4 +1,4 @@
-import { createWriteStream, mkdirSync } from 'fs';
+import { createWriteStream, mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 import { readFile, writeFile } from 'fs/promises';
 import { get as httpGet } from 'https';
@@ -28,7 +28,17 @@ function get(obj: object, props: string[]): any {
 }
 
 function processName(name: string): string {
-    return name.replaceAll(/[^\da-z]/gi, '_').toLowerCase();
+    name = name.replaceAll(/[^\da-z]/gi, '_').toLowerCase();
+
+    while (name[0] === '_') {
+        name = name.substring(1);
+    }
+
+    while (name[name.length - 1] === '_') {
+        name = name.substring(0, name.length - 1);
+    }
+
+    return name;
 }
 
 async function readData(): Promise<object> {
@@ -75,13 +85,17 @@ async function run(): Promise<void> {
                 continue;
             }
 
-            item[ext.image] = item[ext.image].substring('docs/'.length);
+            const output_path = `docs/images/${out}/${processName(item[ext.description])}.png`;
+            if (!existsSync(output_path)) {
+                try {
+                    await downloadImage(item[ext.image], output_path);
+                } catch (e) {
+                    console.error(e);
+                    continue;
+                }
+            }
 
-            // try {
-            //     await downloadImage(item[ext.image], `docs/images/${out}/${processName(item[ext.description])}.png`);
-            // } catch (e) {
-            //     console.error(e);
-            // }
+            item[ext.image] = output_path.substring('docs/'.length);
         }
 
         // const promises = list.filter(i => (ext.image in i) && (ext.description in i))

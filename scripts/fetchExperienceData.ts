@@ -1,4 +1,4 @@
-import { extractMaterial, extractMaterialAndQuantity, fetchPage, firstHtmlChild, getImageUrl, htmlChildren, Material, MaterialWithQuantity, nthHtmlChild, parseIntWithCommas, traverseElement } from './util';
+import { extractMaterial, extractMaterialAndQuantity, fetchPage, firstHtmlChild, getImageUrl, htmlChildren, type Material, type MaterialWithQuantity, nthHtmlChild, parseIntWithCommas, traverseElement } from './util';
 import { urls } from './compile_data';
 import type { HTMLElement } from 'node-html-parser';
 

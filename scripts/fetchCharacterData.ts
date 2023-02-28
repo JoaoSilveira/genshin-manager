@@ -1,8 +1,19 @@
 import type { HTMLElement } from 'node-html-parser';
 import { extractAscensionData } from './extractAscensionData';
-import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, MaterialWithQuantity, requireStringValue, sanitizeName, traverseElement } from './util';
+import { fetchPage, firstHtmlChild, getImageUrl, htmlChildren, IsProduction, lastHtmlChild, linkFromPath, type MaterialWithQuantity, requireStringValue, sanitizeName, traverseElement } from './util';
 import { urls } from './compile_data';
-import { extractTalentData, TalentCostType } from './extractTalentData';
+import { extractTalentData, type TalentCostType } from './extractTalentData';
+
+
+declare type ImageWithDescription = {
+    description: string,
+    image: string,
+};
+
+declare type RowToExtend<P> = {
+    url: string,
+    data: P,
+};
 
 declare type PartialCharacter = {
     name: string,
@@ -13,7 +24,7 @@ declare type PartialCharacter = {
     region?: string,
 };
 
-declare type Character = PartialCharacter & {
+export type Character = PartialCharacter & {
     ascensionCosts: MaterialWithQuantity[][],
     talentCosts: TalentCostType,
 };
@@ -26,7 +37,7 @@ export async function fetchCharacterData(): Promise<Character[]> {
         return await Promise.all(
             [...htmlChildren(tableList)]
                 .slice(1)
-                .map(processRow)
+                .map(processCharacterRow)
                 .map(extendCharacter)
         );
     }
@@ -35,7 +46,7 @@ export async function fetchCharacterData(): Promise<Character[]> {
     }
 }
 
-function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
+export function processCharacterRow(row: HTMLElement): RowToExtend<PartialCharacter> {
     return {
         url: linkFromPath(traverseElement(row, 'v>v').attributes['href']),
         data: {
@@ -49,16 +60,21 @@ function processRow(row: HTMLElement): RowToExtend<PartialCharacter> {
     };
 }
 
-async function extendCharacter(row: RowToExtend<PartialCharacter>): Promise<Character> {
-    const doc = await fetchPage(IsProduction ? row.url : 'samples/character-sample.html');
+export async function extendCharacter(row: RowToExtend<PartialCharacter>): Promise<Character> {
+    try {
+        const doc = await fetchPage(IsProduction ? row.url : 'samples/character-sample.html');
 
-    const talent = extractTalentData(doc);
-    const ascension = extractAscensionData(doc);
-    return {
-        ...row.data,
-        talentCosts: talent,
-        ascensionCosts: ascension,
-    };
+        const talent = extractTalentData(doc);
+        const ascension = extractAscensionData(doc);
+
+        return {
+            ...row.data,
+            talentCosts: talent,
+            ascensionCosts: ascension,
+        };
+    } catch (error) {
+        throw new Error(`Failed to extend url '${row.url}' due to error: ${error.message}`);
+    }
 }
 
 function parseImageDescriptionColumn(link: HTMLElement): ImageWithDescription {

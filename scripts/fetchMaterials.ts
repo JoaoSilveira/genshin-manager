@@ -1,6 +1,6 @@
 import { urls } from "./compile_data";
 import type { HTMLElement } from 'node-html-parser';
-import { extractMaterial, fetchPage, firstHtmlChild, getImageUrl, getTextWithBr, htmlChildren, lastHtmlChild, Material, sanitizeName, traverseElement } from "./util";
+import { extractMaterial, fetchPage, firstHtmlChild, getImageUrl, getTextWithBr, htmlChildren, lastHtmlChild, type Material, sanitizeName, traverseElement, findChildByTag } from "./util";
 
 type LocalSpecialty = Material & {
     region: string,
@@ -50,12 +50,16 @@ type MaterialsType = {
 };
 
 export async function fetchMaterials(): Promise<MaterialsType> {
-    const [common, character, talent, weapon] = await Promise.all([
-        fetchCommonMaterials(),
-        fetchCharacterAscensionMaterials(),
-        fetchTalentAscensionMaterial(),
-        fetchWeaponAscensionMaterials(),
-    ]);
+    // const [common, character, talent, weapon] = await Promise.all([
+    //     fetchCommonMaterials(),
+    //     fetchCharacterAscensionMaterials(),
+    //     fetchTalentAscensionMaterial(),
+    //     fetchWeaponAscensionMaterials(),
+    // ]);
+    const common = await fetchCommonMaterials();
+    const character = await fetchCharacterAscensionMaterials();
+    const talent = await fetchTalentAscensionMaterial();
+    const weapon = await fetchWeaponAscensionMaterials();
 
     return { common, character, talent, weapon };
 }
@@ -89,9 +93,9 @@ function extractCommonEnemyGroup(doc: HTMLElement): MaterialGroup[] {
 
         let matHandle = traverseElement(handle, 'v>v');
         while (matHandle != null) {
-            materials.push(extractMaterial(firstHtmlChild(matHandle)));
+            materials.push(extractMaterial(matHandle));
 
-            matHandle = matHandle.nextElementSibling?.nextElementSibling;
+            matHandle = matHandle.nextElementSibling;
         }
 
         data.push({
@@ -117,9 +121,9 @@ function extractEliteEnemyGroup(doc: HTMLElement): MaterialGroup[] {
 
             let matHandle = traverseElement(handle, 'v>v');
             while (matHandle != null) {
-                materials.push(extractMaterial(firstHtmlChild(matHandle)));
+                materials.push(extractMaterial(matHandle));
 
-                matHandle = matHandle.nextElementSibling?.nextElementSibling;
+                matHandle = matHandle.nextElementSibling;
             }
 
             return {
@@ -156,14 +160,14 @@ function extractGems(doc: HTMLElement): GemGroup[] {
         .slice(1)
         .map((handle): GemGroup => {
             const groupName = sanitizeName(lastHtmlChild(handle));
-            const img = traverseElement(handle, '$vvv');
+            const img = findChildByTag(lastHtmlChild(handle), 'IMG');
             const materials: Material[] = [];
 
             let matHandle = traverseElement(handle, 'vv>>');
             while (matHandle != null) {
                 materials.push(extractMaterial(matHandle));
 
-                matHandle = matHandle.nextElementSibling?.nextElementSibling;
+                matHandle = matHandle.nextElementSibling;
             }
 
             return {
@@ -181,28 +185,28 @@ function extractNormalBoss(doc: HTMLElement): Material[] {
     const target = doc.querySelector('#Normal_Boss_Drops');
     return [...htmlChildren(traverseElement(target, '^>>v'))]
         .slice(1)
-        .map((handle) => extractMaterial(traverseElement(handle, 'vvv')));
+        .map((handle) => extractMaterial(traverseElement(handle, 'vv')));
 }
 
 function extractLocalSpecialty(doc: HTMLElement): LocalSpecialty[] {
-    const target = doc.querySelector('#Local_Specialities');
+    const target = doc.querySelector('#Local_Specialties');
     const materials = [];
 
     let region = traverseElement(target, '^>>>');
-    while (region != null) {
+    while (region != null && region.tagName === 'H3') {
         const regionName = sanitizeName(region);
 
         let material = traverseElement(region, '>vv>');
         while (material != null) {
             materials.push({
-                ...extractMaterial(traverseElement(material, 'vvv')),
+                ...extractMaterial(traverseElement(material, 'vv')),
                 region: regionName,
             });
 
             material = material.nextElementSibling;
         }
 
-        region = region.nextElementSibling;
+        region = traverseElement(region, '>>');
     }
 
     return materials;
@@ -244,9 +248,9 @@ function extractTalentBooks(doc: HTMLElement): AscensionMaterialGroup[] {
 
                 let matHandle = traverseElement(handle, 'v>v>>');
                 while (matHandle != null) {
-                    books.push(extractMaterial(firstHtmlChild(matHandle)))
+                    books.push(extractMaterial(matHandle));
 
-                    matHandle = matHandle.nextElementSibling?.nextElementSibling;
+                    matHandle = matHandle.nextElementSibling;
                 }
 
                 return {
@@ -267,15 +271,15 @@ function extractTalentBossMaterial(doc: HTMLElement): WeeklyBossMaterial[] {
     while (handle != null) {
         const span = parseInt(firstHtmlChild(handle).attributes['rowspan'] ?? '1');
         const bossName = sanitizeName(traverseElement(handle, 'vv$'));
-        const bossImage = getImageUrl(traverseElement(handle, 'vvvvv'));
+        const bossImage = getImageUrl(findChildByTag(handle, 'IMG'));
 
         const materials: Material[] = [];
         let matHandle = traverseElement(handle, 'v>')
         for (let i = 0; i < span; i++) {
-            materials.push(extractMaterial(traverseElement(matHandle, 'vv')));
+            materials.push(extractMaterial(firstHtmlChild(matHandle)));
 
             handle = handle?.nextElementSibling;
-            matHandle = traverseElement(handle, 'v');
+            matHandle = firstHtmlChild(handle);
         }
 
         data.push({
@@ -289,10 +293,10 @@ function extractTalentBossMaterial(doc: HTMLElement): WeeklyBossMaterial[] {
 }
 
 function extractCrown(doc: HTMLElement): Material {
-    return extractMaterial(traverseElement(doc.querySelector('#Limited-duration_Event_Materials'), '^>>v'));
+    return extractMaterial(traverseElement(doc.querySelector('#Limited-duration_Event_Materials'), '^>>'));
 }
 
-async function fetchWeaponAscensionMaterials(): Promise<WeaponAscensionMaterialGroup[]> {
+export async function fetchWeaponAscensionMaterials(): Promise<WeaponAscensionMaterialGroup[]> {
     try {
         const doc = await fetchPage(urls.weapon_ascension_meterials);
         const regions = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru'];
@@ -309,9 +313,9 @@ async function fetchWeaponAscensionMaterials(): Promise<WeaponAscensionMaterialG
 
                     let matHandle = traverseElement(handle, 'v>v');
                     while (matHandle != null) {
-                        materials.push(extractMaterial(firstHtmlChild(matHandle)));
+                        materials.push(extractMaterial(matHandle));
 
-                        matHandle = matHandle.nextElementSibling?.nextElementSibling;
+                        matHandle = matHandle.nextElementSibling;
                     }
 
                     return {
