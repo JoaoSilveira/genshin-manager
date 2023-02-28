@@ -537,7 +537,7 @@ export class Manager {
     readonly talentAscension: TalentAscensionRequirement[];
     readonly characters: Character[];
     readonly maxLevelByStars: number[] = [70, 70, 90, 90, 90];
-    readonly levelBarriers: number[] = [20, 40, 50, 60, 70, 80];
+    readonly levelBarriers: number[] = [20, 40, 50, 60, 70, 80, 90];
     readonly weaponStatus: WeaponBaseManager;
     readonly characterExpByLevel: number[];
     readonly weaponExpByLevel: number[][];
