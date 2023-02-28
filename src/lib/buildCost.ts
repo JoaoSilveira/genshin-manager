@@ -760,8 +760,6 @@ export function calculateTrackable(build_conf): TrackableCost {
     for (const char_conf of build_conf.char_build) {
         const char_cost = characterCost(char_conf);
 
-        console.log(char_conf, char_cost)
-
         cost.mora.characterAdd(char_conf.id, char_cost.mora);
         cost.character_exp.characterAdd(char_conf.id, char_cost.experience);
         cost.crown.characterAdd(char_conf.id, char_cost.crown);
