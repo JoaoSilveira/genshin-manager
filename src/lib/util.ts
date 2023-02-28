@@ -19,7 +19,7 @@ export function isNil(value: any): value is null | undefined {
     return value == null;
 }
 
-export default function deepClone<T>(value: T): T {
+export function deepClone<T>(value: T): T {
     if (Array.isArray(value)) {
         return value.map(v => deepClone(v)) as unknown as T;
     }
@@ -34,4 +34,11 @@ export default function deepClone<T>(value: T): T {
     }
 
     return value;
+}
+
+export function isClickInside(rect: DOMRect, point: { clientX: number, clientY: number }): boolean {
+    return point.clientX >= rect.left &&
+        point.clientY >= rect.top &&
+        point.clientX <= (rect.left + rect.width) &&
+        point.clientY <= (rect.top + rect.height);
 }

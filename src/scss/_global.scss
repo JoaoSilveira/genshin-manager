@@ -1,8 +1,12 @@
 @use "sass:map";
+@use "sass:color";
 @import './mixin', './variables';
 
 * {
     box-sizing: border-box;
+}
+
+:root {
 
     @each $color,
     $value in $colors {
@@ -16,20 +20,35 @@
 html,
 body {
     position: relative;
-    width: 100%;
-    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-body {
-    color: var(--foreground-color);
-    background-color: var(--background-color);
-    margin: 0;
+body,
+dialog {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     font-size: 12pt;
+    color: var(--foreground-color);
+    background-color: var(--background-color);
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+small,
+strong,
+span {
+    margin: 0;
+    line-height: 1;
 }
 
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 7px;
+    height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -88,7 +107,8 @@ select {
             border-color: var(--error-highlight-color);
         }
 
-        &:focus, &:active {
+        &:focus,
+        &:active {
             background-color: transparentize(map.get($colors, "error"), .90);
             color: var(--error-active-color);
             border-color: var(--error-active-color);
@@ -106,4 +126,78 @@ hr {
     background-color: var(--border-color);
     min-width: 2px;
     min-height: 2px;
+}
+
+
+button,
+input[type=button],
+input[type=submit] {
+    outline: none;
+    border: none;
+    background: transparent;
+    color: var(--foreground-color);
+    stroke: var(--foreground-color);
+    padding: 0.25rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 200ms, border-color 200ms, stroke 200ms, opacity 200ms;
+
+    &.icon {
+        padding: 0.15rem;
+    }
+
+    &:disabled,
+    &[disabled] {
+        &:not(.active) {
+            background-color: var(--background-disabled-color);
+            filter: opacity(0.5);
+        }
+
+        &.active {
+            background-color: var(--background-active-color);
+            color: var(--foreground-active-color);
+        }
+    }
+
+    &:not(:disabled) {
+        &:active,
+        &.active {
+            color: var(--foreground-active-color);
+            stroke: var(--foreground-active-color);
+            background-color: var(--background-active-color);
+            // background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        &:hover {
+            color: var(--foreground-highlight-color);
+            stroke: var(--foreground-highlight-color);
+            background-color: var(--background-highlight-color);
+            // background-color: rgba(0, 0, 0, 0.25);
+        }
+    }
+}
+
+dialog {
+    padding: 0;
+    border: 2px solid var(--border-color);
+
+    &::backdrop {
+        backdrop-filter: blur(5px);
+    }
+}
+
+*:has(dialog[open]) {
+    overflow: hidden;
+}
+
+.horizontal-list {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-block: 2px;
+
+    & img {
+        height: 100px;
+    }
 }
