@@ -8,6 +8,7 @@ import { type Character, fetchCharacterData, processCharacterRow, extendCharacte
 import { fetchMaterials, fetchWeaponAscensionMaterials } from "./fetchMaterials";
 import { Manager, WeaponBaseManager } from "./Manager";
 import { extendWeapon, processWeaponRow, type Weapon } from "./extractWeaponList";
+import { run as downloadImages } from "./downloadImages";
 
 declare type AsyncReturnType<T extends (...args: any[]) => any> =
     T extends (...args: any[]) => Promise<infer R> ? R
@@ -166,6 +167,10 @@ async function updateCharacters() {
     }
 }
 
+Promise.all([updateCharacters(), updateWeapons()])
+    .then(() => transform())
+    .then(() => downloadImages());
+
 // fetchCharacterData().then(data => writeFile('data_test/characters.json', JSON.stringify(data)))
 // build();
-transform();
+// transform();

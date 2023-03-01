@@ -28,7 +28,7 @@ function get(obj: object, props: string[]): any {
 }
 
 function processName(name: string): string {
-    name = name.replaceAll(/[^\da-z]/gi, '_').toLowerCase();
+    name = name.replace(/[^\da-z]/gi, '_').toLowerCase();
 
     while (name[0] === '_') {
         name = name.substring(1);
@@ -66,7 +66,13 @@ async function downloadImage(url: string, path: string): Promise<void> {
     });
 }
 
-async function run(): Promise<void> {
+function fileExtensionFromUrl(value: string): string {
+    const dotIndex = value.lastIndexOf('.');
+
+    return dotIndex < 0 ? null : value.substring(dotIndex + 1);
+}
+
+export async function run(): Promise<void> {
     const data = await readData();
 
     const pairs: [ObjectImageExtractor, string][] = [
@@ -85,7 +91,8 @@ async function run(): Promise<void> {
                 continue;
             }
 
-            const output_path = `docs/images/${out}/${processName(item[ext.description])}.png`;
+            const extension = fileExtensionFromUrl(item[ext.image]) ?? 'png';
+            const output_path = `docs/images/${out}/${processName(item[ext.description])}.${extension}`;
             if (!existsSync(output_path)) {
                 try {
                     await downloadImage(item[ext.image], output_path);
