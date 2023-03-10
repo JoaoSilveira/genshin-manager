@@ -64,7 +64,7 @@
             };
         } else {
             const arr = $selected_build.weap_build;
-            const id = arr.length >= 0 ? arr[arr.length - 1].id + 1 : 0;
+            const id = arr.length > 0 ? arr[arr.length - 1].id + 1 : 0;
             arr.push({ ...event.detail, id });
 
             $build_list[$build_index] = {
