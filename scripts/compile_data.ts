@@ -122,6 +122,7 @@ async function updateWeapons() {
 
         for (const weapon of weapons) {
             if (!fetched_weapons.some(w => w.name === weapon.data.name)) {
+                console.log('Fetching new weapon:', weapon.data.name);
                 const complete_weapon = await extendWeapon(weapon);
 
                 if (complete_weapon.attackScaling?.length > 0)
@@ -152,6 +153,7 @@ async function updateCharacters() {
 
         for (const character of characters) {
             if (!fetched_character.some(w => w.name === character.data.name)) {
+                console.log('Fetching new character:', character.data.name);
                 const complete_character = await extendCharacter(character);
 
                 fetched_character.push(complete_character);
