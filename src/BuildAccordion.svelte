@@ -127,6 +127,7 @@
         flex-direction: column;
         align-items: stretch;
         padding-block: 0.5rem;
+        flex: 1;
 
         & > .header {
             flex: 0 0;
@@ -149,6 +150,7 @@
     .header {
         font-size: 1.25rem;
         padding-block: 1rem;
+        border-bottom: 2px solid var(--border-color);
     }
 
     .body {

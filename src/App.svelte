@@ -11,6 +11,8 @@
 	{#if $selected_build != null}
 		<div class="content">
 			<BuildAccordion />
+
+			<hr />
 	
 			<CostsPanel />
 		</div>
@@ -32,10 +34,8 @@
 
 	div.content {
 		flex: 1 1;
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		grid-template-rows: auto;
-		// height: 100%;
-		column-gap: 2rem;
+		display: flex;
+		column-gap: 1rem;
+		padding-inline: 1rem;
 	}
 </style>

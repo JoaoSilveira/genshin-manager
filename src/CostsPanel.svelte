@@ -65,6 +65,7 @@
         flex-direction: column;
         overflow-y: auto;
         gap: 1.5rem;
+        flex: 1;
     }
 
     .header {
