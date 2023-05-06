@@ -119,4 +119,3 @@ export async function run(): Promise<void> {
 }
 
 // run();
-downloadImage('https://static.wikia.nocookie.net/gensin-impact/images/3/3f/Dehya_Icon.png', `docs/images/characters/dehya.png`);

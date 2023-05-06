@@ -752,6 +752,17 @@ export class TrackableCost {
         this.ascension_boss.filterOutZeroes();
         this.talent_boss.filterOutZeroes();
     }
+
+    sort(): void {
+        this.common.list.sort((a, b) => a.item_id - b.item_id);
+        this.elite.list.sort((a, b) => a.item_id - b.item_id);
+        this.gem.list.sort((a, b) => a.item_id - b.item_id);
+        this.book.list.sort((a, b) => a.item_id - b.item_id);
+        this.wam.list.sort((a, b) => a.item_id - b.item_id);
+        this.local_specialty.list.sort((a, b) => a.item_id - b.item_id);
+        this.ascension_boss.list.sort((a, b) => a.item_id - b.item_id);
+        this.talent_boss.list.sort((a, b) => a.item_id - b.item_id);
+    }
 }
 
 export function calculateTrackable(build_conf): TrackableCost {
@@ -787,6 +798,7 @@ export function calculateTrackable(build_conf): TrackableCost {
     cost.mora.quantity += Math.ceil(cost.weapon_exp.quantity / 10);
 
     cost.filterOutZeroes();
+    cost.sort();
 
     return cost;
 }
